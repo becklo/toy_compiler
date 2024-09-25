@@ -1,0 +1,24 @@
+[[package]]
+name = "llvmlite"
+version = "0.43.0"
+description = "lightweight wrapper around basic LLVM functionality"
+category = "main"
+optional = false
+python-versions = ">=3.9"
+
+[[package]]
+name = "ply"
+version = "3.11"
+description = "Python Lex & Yacc"
+category = "main"
+optional = false
+python-versions = "*"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.12"
+content-hash = "13aff7f5806b7bc898999f2d120f3f1443e2eba22780726dcc09f4f583ae98e4"
+
+[metadata.files]
+llvmlite = []
+ply = []
