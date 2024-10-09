@@ -16,7 +16,7 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
-	"postCreateCommand": "sudo apt update && sudo apt install python3-poetry",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-poetry",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -24,7 +24,8 @@
 				"ms-vscode-remote.vscode-remote-extensionpack",
 				"ms-python.python",
 				"VisualStudioExptTeam.vscodeintellicode",
-				"ms-vscode.makefile-tools"
+				"ms-vscode.makefile-tools",
+				"FittenTech.Fitten-Code"
 			]
 		}
 	},
