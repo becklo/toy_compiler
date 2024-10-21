@@ -12,6 +12,7 @@ llvmlite = "^0.43.0"
 
 [tool.poetry.scripts]
 run = "compiler:main"
+compiler = "comp:main"
 
 [build-system]
 requires = ["poetry-core"]

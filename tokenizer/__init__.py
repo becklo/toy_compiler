@@ -2,6 +2,7 @@ import ply.lex as lex
 
 # List of token names.   This is always required
 tokens = (
+   'FLOAT',
    'NUMBER',
    'PLUS',
    'MINUS',
@@ -18,6 +19,12 @@ t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
+
+# Must be defined before NUMBER to avoid that the value matches the NUMBER rule first
+def t_FLOAT(t):
+    r'[+-]?\d+\.\d+'
+    t.value = float(t.value)
+    return t
 
 # A regular expression rule with some action code
 def t_NUMBER(t):
@@ -43,11 +50,11 @@ lexer = lex.lex()
 
 # # Test it out
 # data = '''
-# 3 + 4 * 10
+# 3.24 + 4 * 10
 #   + -20 *2
 # '''
 
-# Give the lexer some input
+# # Give the lexer some input
 # lexer.input(data)
 
 # # Tokenize

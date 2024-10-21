@@ -16,7 +16,7 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
-	"postCreateCommand": "sudo apt update && sudo apt install -y python3-poetry",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-poetry llvm clang",
 	"customizations": {
 		"vscode": {
 			"extensions": [
