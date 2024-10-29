@@ -91,11 +91,11 @@ def pretty_print(node, indent=0):
     for child in node.children:
         pretty_print(child, indent+1)
 
-
-while True:
-   try:
-       s = input('calc > ')
-   except EOFError:
-       break
-   if not s: continue
-   pretty_print(parser.parse(s))
+if __name__ == '__main__':
+    while True:
+        try:
+            s = input('calc > ')
+        except EOFError:
+            break
+        if not s: continue
+        pretty_print(parser.parse(s))

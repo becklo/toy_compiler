@@ -7,6 +7,26 @@ optional = false
 python-versions = ">=3.9"
 
 [[package]]
+name = "numba"
+version = "0.60.0"
+description = "compiling Python code using LLVM"
+category = "main"
+optional = false
+python-versions = ">=3.9"
+
+[package.dependencies]
+llvmlite = ">=0.43.0dev0,<0.44"
+numpy = ">=1.22,<2.1"
+
+[[package]]
+name = "numpy"
+version = "2.0.2"
+description = "Fundamental package for array computing in Python"
+category = "main"
+optional = false
+python-versions = ">=3.9"
+
+[[package]]
 name = "ply"
 version = "3.11"
 description = "Python Lex & Yacc"
@@ -16,9 +36,11 @@ python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.12"
-content-hash = "13aff7f5806b7bc898999f2d120f3f1443e2eba22780726dcc09f4f583ae98e4"
+python-versions = ">=3.10"
+content-hash = "afcd620cac7ec66e342fcf5755d7a8ef3be16bd94a0acb238d5ae3b9dab7ba56"
 
 [metadata.files]
 llvmlite = []
+numba = []
+numpy = []
 ply = []
