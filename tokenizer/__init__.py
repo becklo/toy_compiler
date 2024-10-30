@@ -10,6 +10,13 @@ tokens = (
    'DIVIDE',
    'LPAREN',
    'RPAREN',
+   'RBRACE',
+   'LBRACE',
+   'ID',
+   'TYPE',
+   'ASSIGN',
+   'COMMA',
+   'SEMICOLON'
 )
 
 # Regular expression rules for simple tokens
@@ -19,6 +26,19 @@ t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
+t_LBRACE  = r'{'
+t_RBRACE  = r'}'
+t_ASSIGN  = r'='
+t_COMMA   = r','
+t_SEMICOLON = r';'
+
+def t_TYPE(t):
+    r'int|float|bool|string'
+    return t
+
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    return t
 
 # Must be defined before NUMBER to avoid that the value matches the NUMBER rule first
 def t_FLOAT(t):

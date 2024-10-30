@@ -1,6 +1,10 @@
 from parser import parser, pretty_print
 import readline
 
+func = None
+block = None
+builder = None
+
 def compile(name, code):
     ast = parser.parse(code)
 
@@ -13,14 +17,19 @@ def compile(name, code):
     # Create an empty module..
     module = ir.Module(name=__file__)
     module.triple = tripple
-    func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name="_start")
-
-    # Now implement the function
-    block = func.append_basic_block(name="entry")
-    builder = ir.IRBuilder(block)
 
     def compile_ast(ast):
+        global func, block, builder
         match ast.type:
+            case "function_def":
+                func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name=ast.value)
+                block = func.append_basic_block()
+                builder = ir.IRBuilder(block)
+                builder.ret(compile_ast(ast.children[0]))
+            case "assign":
+                var = builder.alloca(ir.IntType(32), name=ast.value)
+                builder.store(compile_ast(ast.children[0]), var)
+                return builder.load(var)
             case "factor":
                 if len(ast.children) == 0:
                     return ir.Constant(ir.IntType(32), int(ast.value))
@@ -60,8 +69,9 @@ def compile(name, code):
                 if ast.value == '-':
                     return builder.fsub(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
             case "x_expression":
-                result = compile_ast(ast.children[0])
-                builder.ret(result)
+                return compile_ast(ast.children[0])
+            case "statement":
+                return compile_ast(ast.children[0])
             case _:
                 raise ValueError(f"Unknown AST node type: {ast.type}")
 
@@ -80,7 +90,7 @@ def main():
     """
     while True:
         try:
-            s = input('calc > ')
+            s = input('compiler > ')
         except EOFError:
             break
         if not s: continue
