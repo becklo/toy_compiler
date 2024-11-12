@@ -22,12 +22,12 @@ def p_function_def(p):
                    | TYPE ID LPAREN RPAREN scope
     """
     if len(p) == 7:
-        p[0] = Node('function_def', p[2], [p[4], p[6]])
+        p[0] = Node('function_def', [p[1], p[2]], [p[4], p[6]])
     if len(p) == 6:
-        p[0] = Node('function_def', p[2], [p[5]])
+        p[0] = Node('function_def', [p[1], p[2]], [p[5]])
 
 def p_scope(p):
-    """scope : LBRACE statement RBRACE"""
+    """scope : LBRACE statements RBRACE"""
     p[0] = Node('scope', '', [p[2]])
 
 def p_params(p):
@@ -42,6 +42,15 @@ def p_params(p):
 def p_param(p): 
     """param : TYPE ID"""
     p[0] = Node(p[1], p[2], [])
+
+def p_statements(p):
+    """statements : statement SEMICOLON statements
+                  | statement
+    """
+    if len(p) == 2:
+        p[0] = Node('statements', '', [p[1]])
+    if len(p) == 4:
+        p[0] = Node('statements', ';', [p[1], p[3]])
 
 def p_statement_assign(p):
     """assign : TYPE ID ASSIGN expression"""
@@ -132,7 +141,10 @@ def p_error(p):
 parser = yacc.yacc()
 
 def pretty_print(node, indent=0):
-    print('  '* indent + node.type + ':'+ str(node.value))
+    if node.type == 'function_def':
+        print('  '* indent + node.type + ':('+ str(node.value[0]) + ') ' + str(node.value[1]))
+    else :
+        print('  '* indent + node.type + ':'+ str(node.value))
     for child in node.children:
         pretty_print(child, indent+1)
 

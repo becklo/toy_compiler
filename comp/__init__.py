@@ -26,26 +26,42 @@ def compile(name, code):
             case "program":
                 return compile_ast(ast.children[0])
             case "function_def":
-                func = ir.Function(module, ir.FunctionType(ir.IntType(32), func_args), name=ast.value)
+                if ast.value[0] == 'int':
+                    func = ir.Function(module, ir.FunctionType(ir.IntType(32), func_args), name=ast.value[1])
+                elif ast.value[0] == 'float':
+                    func = ir.Function(module, ir.FunctionType(ir.FloatType(), func_args), name=ast.value[1])
+                else:
+                    raise ValueError(f"Unknown function type: {ast.value[0]}")
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
-                builder.ret(compile_ast(ast.children[0]))
+                if len(ast.children) > 1:
+                    compile_ast(ast.children[0])
+                    builder.ret(compile_ast(ast.children[1]))
+                else:
+                    builder.ret(compile_ast(ast.children[0]))
             case "scope":
                 return compile_ast(ast.children[0])
             case "assign":
                 var = builder.alloca(ir.IntType(32), name=ast.value)
                 builder.store(compile_ast(ast.children[0]), var)
                 return builder.load(var)
+            case "statements":
+                if ast.value == ';':
+                    compile_ast(ast.children[0])
+                    return compile_ast(ast.children[1])
+                else:
+                    return compile_ast(ast.children[0])
             case "statement":
                 return compile_ast(ast.children[0])
             case "expression":
                 return compile_ast(ast.children[0])
             case "params":
-                if len(ast.children) == 1:
-                    return compile_ast(ast.children[0])
-                else: 
+                print(ast.value)
+                if ast.value == ',':
                     compile_ast(ast.children[0]) # not sure if that is the way
                     return compile_ast(ast.children[1])
+                else: 
+                    return compile_ast(ast.children[0])
             case "int":
                 if len(ast.children) == 0:
                     func.args = func.args + (ir.IntType(32),)
@@ -53,7 +69,11 @@ def compile(name, code):
                     return compile_ast(ast.children[0])
             case "int_factor":
                 if len(ast.children) == 0:
-                    return ir.Constant(ir.IntType(32), int(ast.value))
+                    if isinstance(ast.value, int):
+                        return ir.Constant(ir.IntType(32), int(ast.value))
+                    else:
+                        var = builder.alloca(ir.IntType(32), name=ast.value)
+                        return builder.load(var)
                 else:
                     return compile_ast(ast.children[0])
             case "int_term":
@@ -77,6 +97,7 @@ def compile(name, code):
                     return compile_ast(ast.children[0])
             case "float_factor":
                 if len(ast.children) == 0:
+                    # cannot be a variable for now, so no need to handle it
                     return ir.Constant(ir.FloatType(), float(ast.value))
                 else:
                     return compile_ast(ast.children[0])
