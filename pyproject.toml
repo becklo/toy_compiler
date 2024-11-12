@@ -15,6 +15,7 @@ numba = "^0.60.0"
 run = "compiler:main"
 compiler = "comp:main"
 parser = "parser:main"
+test = "tests:main"
 
 [build-system]
 requires = ["poetry-core"]
