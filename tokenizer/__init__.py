@@ -1,9 +1,19 @@
 import ply.lex as lex
 
+reserved = {
+   'include' : 'INCLUDE',
+   'if' : 'IF',
+   'else' : 'ELSE',
+   'while' : 'WHILE',
+   'for' : 'FOR',
+   'return' : 'RETURN',
+   'declare' : 'DECLARE'
+}
+
 # List of token names.   This is always required
-tokens = (
+tokens = [
    'FLOAT',
-   'NUMBER',
+   'INTEGER',
    'PLUS',
    'MINUS',
    'TIMES',
@@ -12,12 +22,28 @@ tokens = (
    'RPAREN',
    'RBRACE',
    'LBRACE',
-   'ID',
+   'IDENTIFIER',
    'TYPE',
    'ASSIGN',
    'COMMA',
-   'SEMICOLON'
-)
+   'SEMICOLON',
+   'COMMENT',
+   'STRING',
+#    'EXTERNAL_FUNC',
+   'THREE_DOTS',
+   'DOT',
+   'EQUAL',
+   'NOT_EQUAL',
+   'GREATER_THAN',
+   'LESS_THAN',
+   'GREATER_EQUAL',
+   'LESS_EQUAL',
+   'GLOBAL_VAR',
+   'INCREMENT',
+   'DECREMENT'
+]
+
+tokens += list(reserved.values())
 
 # Regular expression rules for simple tokens
 t_PLUS    = r'\+'
@@ -31,23 +57,48 @@ t_RBRACE  = r'}'
 t_ASSIGN  = r'='
 t_COMMA   = r','
 t_SEMICOLON = r';'
+t_THREE_DOTS = r'\.{3}'
+t_DOT     = r'\.'
+t_EQUAL = r'=='
+t_NOT_EQUAL = r'!='
+t_GREATER_THAN = r'>'
+t_LESS_THAN = r'<'
+t_GREATER_EQUAL = r'>='
+t_LESS_EQUAL = r'<='
+t_ignore_COMMENT = r'\#.*'
+t_INCREMENT = r'\+\+'
+t_DECREMENT = r'--'
+
+def t_STRING(t):
+    r'\".*\n?\"'
+    t.value = t.value[1:-1]
+    return t
 
 def t_TYPE(t):
-    r'int|float|bool|string'
+    r'int|float|bool|str'
     return t
 
-def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z0-9_]*'
+def t_GLOBAL_VAR(t):
+    r'Global\_[a-zA-Z_][a-zA-Z0-9_]*'
     return t
 
-# Must be defined before NUMBER to avoid that the value matches the NUMBER rule first
+# def t_EXTERNAL_FUNC(t):
+#     r'external\_[a-zA-Z_][a-zA-Z0-9_]*'
+#     return t
+
+def t_IDENTIFIER(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value,'IDENTIFIER')    # Check for reserved words
+    return t
+
+# Must be defined before INTEGER to avoid that the value matches the INTEGER rule first
 def t_FLOAT(t):
     r'[+-]?\d+\.\d+'
     t.value = float(t.value)
     return t
 
 # A regular expression rule with some action code
-def t_NUMBER(t):
+def t_INTEGER(t):
     r'\d+'
     t.value = int(t.value)
     return t
@@ -68,18 +119,43 @@ def t_error(t):
 # Build the lexer
 lexer = lex.lex()
 
-# # Test it out
-# data = '''
-# 3.24 + 4 * 10
-#   + -20 *2
-# '''
+# Test it out
+data = '''
+# This is a comment until the end of the line 
+include ModuleNameSomewhere; # this should act like a C include, we will ignore it initially and implement it later
+int Global_Variable;
+float Global_Float = 3*5-(36/6);
+str Global_str = "String content\n";
+declare int external_function1();
+declare int external_function2(int a, int b);
+declare int printf(str text,...); # variable argument
+int fibonacci(int n) if (n < 2) 1 else fibonacci(n-1)+fibonacci(n-2) # remember if is an expression now so it returns a value, and the latest value in scope is also a return statement so this is implicit return. Also we do not have a scope block because we have defined a function to have an expression, while in expression we can have many scope blocks
+int one() 1; # here we have implicit return of 1
+Int two() return 2; # here we have explicit return of 2
+int something(float b) { 
+ if (one() < two() and { 5*6 >= 4*6}) { return 1};
+ return 2;
+}
+int main() {
+  if (something(2.1*5) > 0) {
+ printf("Hello world %s\n", Global_str);
+}
+int n = { -5};
+while (n<0) n++;
+n # this is going to be our return value
+}
+'''
 
-# # Give the lexer some input
-# lexer.input(data)
+def main():
+    # Give the lexer some input
+    lexer.input(data)
 
-# # Tokenize
-# while True:
-#     tok = lexer.token()
-#     if not tok: 
-#         break      # No more input
-#     print(tok)
+    # Tokenize
+    while True:
+        tok = lexer.token()
+        if not tok: 
+            break      # No more input
+        print(tok)
+
+if __name__ == "__main__":
+    main()
