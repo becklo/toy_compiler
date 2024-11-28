@@ -27,7 +27,6 @@ tokens = [
    'ASSIGN',
    'COMMA',
    'SEMICOLON',
-   'COMMENT',
    'STRING',
 #    'EXTERNAL_FUNC',
    'THREE_DOTS',
@@ -40,12 +39,18 @@ tokens = [
    'LESS_EQUAL',
    'GLOBAL_VAR',
    'INCREMENT',
-   'DECREMENT'
+   'DECREMENT',
+   'AND',
+   'OR',
+   'NOT',
+   'TRUE',
+   'FALSE'
 ]
 
 tokens += list(reserved.values())
 
 # Regular expression rules for simple tokens
+t_ignore_COMMENT = r'\#.*'
 t_PLUS    = r'\+'
 t_MINUS   = r'-'
 t_TIMES   = r'\*'
@@ -56,7 +61,7 @@ t_LBRACE  = r'{'
 t_RBRACE  = r'}'
 t_ASSIGN  = r'='
 t_COMMA   = r','
-t_SEMICOLON = r';'
+t_SEMICOLON = r'\;'
 t_THREE_DOTS = r'\.{3}'
 t_DOT     = r'\.'
 t_EQUAL = r'=='
@@ -65,9 +70,28 @@ t_GREATER_THAN = r'>'
 t_LESS_THAN = r'<'
 t_GREATER_EQUAL = r'>='
 t_LESS_EQUAL = r'<='
-t_ignore_COMMENT = r'\#.*'
 t_INCREMENT = r'\+\+'
 t_DECREMENT = r'--'
+
+def t_AND(t):
+    r'&&|and|AND'
+    return t
+
+def t_OR(t):
+    r'\|\||or|OR'
+    return t
+
+def t_NOT(t):
+    r'!|not|NOT'
+    return t
+
+def t_TRUE(t):
+    r'(?i)true'
+    return t
+
+def t_FALSE(t):
+    r'(?i)false'
+    return t
 
 def t_STRING(t):
     r'\".*\n?\"'
@@ -131,18 +155,11 @@ declare int external_function2(int a, int b);
 declare int printf(str text,...); # variable argument
 int fibonacci(int n) if (n < 2) 1 else fibonacci(n-1)+fibonacci(n-2) # remember if is an expression now so it returns a value, and the latest value in scope is also a return statement so this is implicit return. Also we do not have a scope block because we have defined a function to have an expression, while in expression we can have many scope blocks
 int one() 1; # here we have implicit return of 1
-Int two() return 2; # here we have explicit return of 2
-int something(float b) { 
- if (one() < two() and { 5*6 >= 4*6}) { return 1};
- return 2;
-}
-int main() {
-  if (something(2.1*5) > 0) {
- printf("Hello world %s\n", Global_str);
-}
+int two() return 2; # here we have explicit return of 2
+int something(float b) { if (one() < two() and { 5*6 >= 4*6}) { return 1}; return 2;}
+int main() { if (something(2.1*5) > 0) { printf("Hello world %s\n", Global_str);}
 int n = { -5};
-while (n<0) n++;
-n # this is going to be our return value
+while (n<0) n++; n # this is going to be our return value
 }
 '''
 
