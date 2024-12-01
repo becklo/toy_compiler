@@ -10,21 +10,21 @@ class Node:
         self.value = value
         self.children = children
 
-def p_test(p):
-    """mytest : mytest scope 
-                | scope
-                | mytest SEMICOLON
-                | SEMICOLON"""
-    if len(p) == 3:
-        if p[2]==';':
-            p[0] = Node('test', '', [p[1]])
-        else:
-            p[0] = Node('test', '', [p[1],p[2]])
-    else: 
-        if(p[1] == ';'):
-            p[0] = Node(';', '', [])
-        else:
-            p[0] = Node('test', '', [p[1]])
+# def p_test(p):
+#     """mytest : mytest logical_op_expression 
+#                 | logical_op_expression
+#                 | mytest SEMICOLON
+#                 | SEMICOLON"""
+#     if len(p) == 3:
+#         if p[2]==';':
+#             p[0] = Node('test', '', [p[1]])
+#         else:
+#             p[0] = Node('test', '', [p[1],p[2]])
+#     else: 
+#         if(p[1] == ';'):
+#             p[0] = Node(';', '', [])
+#         else:
+#             p[0] = Node('test', '', [p[1]])
 
 
 # Define the grammar rules
@@ -33,8 +33,6 @@ def p_program(p):
                 | global_var
                 | program function_declaration
                 | function_declaration
-                | program func_call
-                | func_call
                 | program SEMICOLON
                 | SEMICOLON
                 | program external_function_declaration
@@ -56,8 +54,8 @@ def p_program(p):
             p[0] = Node('program', '', [p[1], p[2]])
 
 def p_global_var(p):
-    '''global_var : GLOBAL_VAR'''
-    p[0] = Node('global_var', p[1], [])
+    '''global_var : declaration'''
+    p[0] = Node('global_var', '', [p[1]])
 
 def p_include(p):
     ''' include : INCLUDE IDENTIFIER
@@ -160,7 +158,7 @@ def p_statements(p):
             p[0] = Node('statements', '', [p[1], p[2]])
 
 def p_statement(p):
-    '''statement : expression
+    '''statement : logical_op_expression
                     | assignments
                     | declarations
                     | while_loop
@@ -171,11 +169,10 @@ def p_statement(p):
     p[0] = Node('statement', '', [p[1]])
 
 def p_expression(p):
-    '''expression : binary_expression 
-                    | string_op_expression
-                    | increment_after
+    '''expression : increment_after
                     | increment_before
-                    | logical_op_expression
+                    | binary_expression 
+                    | string_op_expression
     '''
     p[0] = Node('expression', '', [p[1]])
 
@@ -189,15 +186,13 @@ def p_assignments(p):
         p[0] = Node('assignments', '', [p[1], p[3]])
 
 def p_assignment(p):
-    '''assignment : TYPE IDENTIFIER ASSIGN expression 
-                    | TYPE GLOBAL_VAR ASSIGN expression 
-                    | IDENTIFIER ASSIGN expression 
+    '''assignment : IDENTIFIER ASSIGN expression 
                     | GLOBAL_VAR ASSIGN expression 
     '''
-    if (len(p) == 5):
-        p[0] = Node(p[3], [p[1], p[2]], [p[4]])
-    else:
-        p[0] = Node(p[2], p[1],  [p[3]])
+    # if (len(p) == 5):
+    #     p[0] = Node(p[3], [p[1], p[2]], [p[4]])
+    # else:
+    p[0] = Node(p[2], p[1],  [p[3]])
 
 def p_declarations(p):
     '''declarations : declaration declarations
@@ -211,19 +206,24 @@ def p_declarations(p):
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
                     | TYPE GLOBAL_VAR
+                    | TYPE IDENTIFIER ASSIGN expression 
+                    | TYPE GLOBAL_VAR ASSIGN expression 
     '''
-    p[0] = Node('declaration', [p[1], p[2]], [])
+    if (len(p) == 3):
+        p[0] = Node('declaration', [p[1], p[2]], [])
+    else:
+        p[0] = Node('declaration', [p[1], p[2]], [p[4]])
 
 def p_while_loop(p):
-    '''while_loop : WHILE LPAREN expression RPAREN scope '''
+    '''while_loop : WHILE LPAREN logical_op_expression RPAREN scope '''
     p[0] = Node('while_loop', '', [p[3], p[5]])
 
 def p_for_loop(p):
-    '''for_loop : FOR LPAREN statement SEMICOLON statement SEMICOLON statement RPAREN scope 
+    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN scope 
                     | FOR LPAREN RPAREN scope 
                     | FOR LPAREN SEMICOLON SEMICOLON RPAREN scope
-                    | FOR LPAREN statement SEMICOLON RPAREN scope
-                    | FOR LPAREN statement SEMICOLON statement RPAREN
+                    | FOR LPAREN logical_op_expression SEMICOLON RPAREN scope
+                    | FOR LPAREN statement SEMICOLON logical_op_expression RPAREN
     '''
     match(len(p)):
         case 10:
@@ -240,8 +240,8 @@ def p_for_loop(p):
                     p[0] = Node('for_loop', '', [p[3], p[5]])
 
 def p_if_statement(p):
-    '''if_statement : IF LPAREN expression RPAREN statements 
-                    | IF LPAREN expression RPAREN statements ELSE statements
+    '''if_statement : IF LPAREN logical_op_expression RPAREN statements 
+                    | IF LPAREN logical_op_expression RPAREN statements ELSE statements
     '''
     if (len(p) == 6):
         p[0] = Node('if_statement', '', [p[3], p[5]])
@@ -285,24 +285,32 @@ def p_increment_before(p):
 def p_logical_op_expression(p):
     '''logical_op_expression : logical_op_expression AND logical_op_term
                     | logical_op_expression OR logical_op_term
-                    | NOT logical_op_term
+                    | logical_op_term
     '''
     if (len(p) == 4):
         p[0] = Node(p[2], '', [p[1], p[3]])
     else:
-        p[0] = Node(p[1], '', [p[2]])
+        p[0] = Node('logical_op_expression', '', [p[1]])
 
 def p_logical_op_term(p):
-    '''logical_op_term : logical_op_factor
+    '''logical_op_term : logical_factor
     '''
     p[0] = Node('logical_op_term', '', [p[1]])
 
-def p_logical_op_factor(p):
-    '''logical_op_factor : TRUE
-                        | FALSE
+def p_logical_op_not(p):
+    '''logical_op_term : NOT logical_factor
     '''
-    p[0] = Node('logical_op_factor', '', [p[1]])
+    p[0] = Node('logical_op_not', '', [p[2]])
 
+def p_logical_op_factor(p):
+    '''logical_factor : TRUE
+                | FALSE
+    '''
+    p[0] = Node('logical_op_factor', p[1], [])
+
+def p_logical_factor_expression(p):
+    '''logical_factor : expression'''
+    p[0] = Node('logical_factor', '', [p[1]])
 
 def p_binary_cmp_op_expression(p):
     '''binary_expression : binary_expression EQUAL binary_term
@@ -317,12 +325,9 @@ def p_binary_cmp_op_expression(p):
 def p_binary_op_expression(p):
     '''binary_expression : binary_expression PLUS binary_term
                     | binary_expression MINUS binary_term
-                    | MINUS binary_term
                     | binary_term
     '''
-    if (len(p) == 3):
-        p[0] = Node(p[1], '', [p[2]])
-    elif (len(p) == 2):
+    if (len(p) == 2):
         p[0] = Node('binary_op_expression', '', [p[1]])
     else:
         p[0] = Node(p[2], '', [p[1], p[3]])
@@ -336,6 +341,15 @@ def p_term(p):
         p[0] = Node(p[2], '', [p[1], p[3]])
     else:
         p[0] = Node('binary_term', '', [p[1]])
+
+def p_factor_func_call(p):
+    '''factor : func_call'''
+    p[0] = Node('factor', '', [p[1]])
+
+def p_factor_inverse(p):
+    '''factor : MINUS INTEGER
+                | MINUS FLOAT'''
+    p[0] = Node(p[1], p[2], [])
 
 def p_factor(p):
     '''factor : INTEGER
