@@ -10,21 +10,21 @@ class Node:
         self.value = value
         self.children = children
 
-# def p_test(p):
-#     """mytest : mytest logical_op_expression 
-#                 | logical_op_expression
-#                 | mytest SEMICOLON
-#                 | SEMICOLON"""
-#     if len(p) == 3:
-#         if p[2]==';':
-#             p[0] = Node('test', '', [p[1]])
-#         else:
-#             p[0] = Node('test', '', [p[1],p[2]])
-#     else: 
-#         if(p[1] == ';'):
-#             p[0] = Node(';', '', [])
-#         else:
-#             p[0] = Node('test', '', [p[1]])
+def p_test(p):
+    """mytest : mytest logical_op_expression 
+                | logical_op_expression
+                | mytest SEMICOLON
+                | SEMICOLON"""
+    if len(p) == 3:
+        if p[2]==';':
+            p[0] = Node('test', '', [p[1]])
+        else:
+            p[0] = Node('test', '', [p[1],p[2]])
+    else: 
+        if(p[1] == ';'):
+            p[0] = Node(';', '', [])
+        else:
+            p[0] = Node('test', '', [p[1]])
 
 
 # Define the grammar rules
@@ -101,17 +101,14 @@ def p_dec_parameter(p):
         p[0] = Node('dec_parameter', [p[1], p[2]], [])
 
 def p_func_call(p):
-    '''func_call : IDENTIFIER func_call_params'''
-    p[0] = Node('func_call', p[1], [p[2]])
-
-def p_func_call_params(p):
-    '''func_call_params : LPAREN func_call_args RPAREN
-                    | LPAREN RPAREN
+    '''func_call : IDENTIFIER LPAREN func_call_args RPAREN
+                  | IDENTIFIER LPAREN RPAREN  
     '''
-    if (len(p) == 3):
-        p[0] = Node('func_call_args', '', [])
+    if (len(p) == 4):
+        p[0] = Node('func_call', p[1], [])
     else:
-        p[0] = p[2]
+        p[0] = Node('func_call', p[1], [p[3]])
+
 
 def p_func_call_args(p):
     '''func_call_args : func_call_args COMMA func_call_arg
@@ -170,8 +167,10 @@ def p_statement(p):
     p[0] = Node('statement', '', [p[1]])
 
 def p_expression(p):
-    '''expression : increment_after
-                    | increment_before
+    '''expression : increment_postfix
+                    | increment_prefix
+                    | decrement_postfix
+                    | decrement_prefix
                     | binary_expression 
                     | string_op_expression
     '''
@@ -267,21 +266,25 @@ def p_string_op(p):
     '''string_op_expression : STRING'''
     p[0] = Node('string', p[1], [])
 
-def p_increment_after(p):
-    '''increment_after : IDENTIFIER INCREMENT 
-                    | GLOBAL_VAR INCREMENT 
-                    | IDENTIFIER DECREMENT 
-                    | GLOBAL_VAR DECREMENT 
+def p_increment_postfix(p):
+    '''increment_postfix : INCREMENT_POSTFIX 
     '''
-    p[0] = Node(p[2], p[1], [])
+    p[0] = Node('increment_postfix', p[1], [])
 
-def p_increment_before(p):
-    '''increment_before : INCREMENT IDENTIFIER 
-                    | INCREMENT GLOBAL_VAR 
-                    | DECREMENT IDENTIFIER 
-                    | DECREMENT GLOBAL_VAR 
+def p_decrement_postfix(p):
+    '''decrement_postfix : DECREMENT_POSTFIX
     '''
-    p[0] = Node(p[2], p[1], [])
+    p[0] = Node('decrement_postfix', p[1], [])
+
+def p_increment_prefix(p):
+    '''increment_prefix : INCREMENT_PREFIX
+    '''
+    p[0] = Node('increment_prefix', p[1], [])
+
+def p_decrement_prefix(p):
+    '''decrement_prefix :  DECREMENT_PREFIX 
+    '''
+    p[0] = Node('decrement_prefix', p[1], [])
 
 def p_logical_op_expression(p):
     '''logical_op_expression : logical_op_expression AND logical_op_term

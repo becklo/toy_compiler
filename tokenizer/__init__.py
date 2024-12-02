@@ -38,8 +38,10 @@ tokens = [
    'GREATER_EQUAL',
    'LESS_EQUAL',
    'GLOBAL_VAR',
-   'INCREMENT',
-   'DECREMENT',
+   'INCREMENT_PREFIX',
+   'DECREMENT_PREFIX',
+   'INCREMENT_POSTFIX',
+   'DECREMENT_POSTFIX',
    'AND',
    'OR',
    'NOT',
@@ -51,26 +53,24 @@ tokens += list(reserved.values())
 
 # Regular expression rules for simple tokens
 t_PLUS    = r'\+'
-t_MINUS   = r'-'
+t_MINUS   = r'\-'
 t_TIMES   = r'\*'
-t_DIVIDE  = r'/'
+t_DIVIDE  = r'\/'
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
-t_LBRACE  = r'{'
-t_RBRACE  = r'}'
-t_ASSIGN  = r'='
-t_COMMA   = r','
+t_LBRACE  = r'\{'
+t_RBRACE  = r'\}'
+t_ASSIGN  = r'\='
+t_COMMA   = r'\,'
 t_SEMICOLON = r'\;'
 t_THREE_DOTS = r'\.{3}'
 t_DOT     = r'\.'
-t_EQUAL = r'=='
-t_NOT_EQUAL = r'!='
-t_GREATER_THAN = r'>'
-t_LESS_THAN = r'<'
-t_GREATER_EQUAL = r'>='
-t_LESS_EQUAL = r'<='
-t_INCREMENT = r'\+\+'
-t_DECREMENT = r'--'
+t_EQUAL = r'\=\='
+t_NOT_EQUAL = r'\!\='
+t_GREATER_THAN = r'\>'
+t_LESS_THAN = r'\<'
+t_GREATER_EQUAL = r'\>\='
+t_LESS_EQUAL = r'\<\='
 t_ignore_COMMENT = r'\#.*'
 
 def t_AND(t):
@@ -100,6 +100,26 @@ def t_STRING(t):
 
 def t_TYPE(t):
     r'int|float|bool|str'
+    return t
+
+def t_INCREMENT_PREFIX(t):
+    r'\+\+[a-zA-Z_][a-zA-Z_0-9]*'
+    t.value = t.value[2:]
+    return t
+
+def t_DECREMENT_PREFIX(t):
+    r'\-\-[a-zA-Z_][a-zA-Z_0-9]*'
+    t.value = t.value[2:]
+    return t
+
+def t_INCREMENT_POSTFIX(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*\+\+'
+    t.value = t.value[:-2]
+    return t
+
+def t_DECREMENT_POSTFIX(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*\-\-'
+    t.value = t.value[:-2]
     return t
 
 def t_GLOBAL_VAR(t):
