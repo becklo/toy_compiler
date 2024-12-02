@@ -50,7 +50,6 @@ tokens = [
 tokens += list(reserved.values())
 
 # Regular expression rules for simple tokens
-t_ignore_COMMENT = r'\#.*'
 t_PLUS    = r'\+'
 t_MINUS   = r'-'
 t_TIMES   = r'\*'
@@ -72,6 +71,7 @@ t_GREATER_EQUAL = r'>='
 t_LESS_EQUAL = r'<='
 t_INCREMENT = r'\+\+'
 t_DECREMENT = r'--'
+t_ignore_COMMENT = r'\#.*'
 
 def t_AND(t):
     r'&&|and|AND'

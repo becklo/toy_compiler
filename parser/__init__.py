@@ -132,11 +132,12 @@ def p_func_call_arg(p):
 def p_scope(p):
     '''scope : LBRACE statements RBRACE
                 | LBRACE RBRACE
+                | statements
     '''
     if (len(p) == 4):
         p[0] = Node('scope', '', [p[2]])
-    # if (len(p) == 2):
-    #     p[0] = Node('scope', '', [p[1]])
+    elif (len(p) == 2):
+        p[0] = Node('scope', '', [p[1]])
     else:
         p[0] = Node('scope', '', [])
 
@@ -206,8 +207,8 @@ def p_declarations(p):
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
                     | TYPE GLOBAL_VAR
-                    | TYPE IDENTIFIER ASSIGN expression 
-                    | TYPE GLOBAL_VAR ASSIGN expression 
+                    | TYPE IDENTIFIER ASSIGN scope 
+                    | TYPE GLOBAL_VAR ASSIGN scope 
     '''
     if (len(p) == 3):
         p[0] = Node('declaration', [p[1], p[2]], [])
@@ -240,8 +241,8 @@ def p_for_loop(p):
                     p[0] = Node('for_loop', '', [p[3], p[5]])
 
 def p_if_statement(p):
-    '''if_statement : IF LPAREN logical_op_expression RPAREN statements 
-                    | IF LPAREN logical_op_expression RPAREN statements ELSE statements
+    '''if_statement : IF LPAREN logical_op_expression RPAREN scope 
+                    | IF LPAREN logical_op_expression RPAREN scope ELSE scope
     '''
     if (len(p) == 6):
         p[0] = Node('if_statement', '', [p[3], p[5]])
@@ -355,7 +356,9 @@ def p_factor(p):
     '''factor : INTEGER
                 | FLOAT
                 | IDENTIFIER
+                | GLOBAL_VAR
                 | LPAREN expression RPAREN
+                | LBRACE expression RBRACE
     '''
     if (len(p) == 4):
         p[0] = p[2]
