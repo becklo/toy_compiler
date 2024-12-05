@@ -10,10 +10,10 @@ class Node:
         self.value = value
         self.children = children
 
-# def p_test(p):
-#     '''test : func_call_arg
-#     '''
-#     p[0] = Node('test', '', [p[1]])
+def p_test(p):
+    '''test : statement
+    '''
+    p[0] = Node('test', '', [p[1]])
 
 # def p_test(p):
 #     """mytest : mytest logical_op_expression 
@@ -44,8 +44,6 @@ def p_program(p):
                 | external_function_declaration
                 | program include
                 | include
-                | program scope
-                | scope
     '''
     if (len(p) == 2):
         if(p[1] == ';'):
