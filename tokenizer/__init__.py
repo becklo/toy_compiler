@@ -1,4 +1,5 @@
 import ply.lex as lex
+import history
 
 reserved = {
    'include' : 'INCLUDE',
@@ -185,6 +186,10 @@ while (n<0) n++; n # this is going to be our return value
 
 def main():
     # Give the lexer some input
+
+
+    # lexer.input(data)
+    data = input("Enter code: ")
     lexer.input(data)
 
     # Tokenize

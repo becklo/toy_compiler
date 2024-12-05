@@ -10,21 +10,26 @@ class Node:
         self.value = value
         self.children = children
 
-def p_test(p):
-    """mytest : mytest logical_op_expression 
-                | logical_op_expression
-                | mytest SEMICOLON
-                | SEMICOLON"""
-    if len(p) == 3:
-        if p[2]==';':
-            p[0] = Node('test', '', [p[1]])
-        else:
-            p[0] = Node('test', '', [p[1],p[2]])
-    else: 
-        if(p[1] == ';'):
-            p[0] = Node(';', '', [])
-        else:
-            p[0] = Node('test', '', [p[1]])
+# def p_test(p):
+#     '''test : func_call_arg
+#     '''
+#     p[0] = Node('test', '', [p[1]])
+
+# def p_test(p):
+#     """mytest : mytest logical_op_expression 
+#                 | logical_op_expression
+#                 | mytest SEMICOLON
+#                 | SEMICOLON"""
+#     if len(p) == 3:
+#         if p[2]==';':
+#             p[0] = Node('test', '', [p[1]])
+#         else:
+#             p[0] = Node('test', '', [p[1],p[2]])
+#     else: 
+#         if(p[1] == ';'):
+#             p[0] = Node(';', '', [])
+#         else:
+#             p[0] = Node('test', '', [p[1]])
 
 
 # Define the grammar rules
@@ -108,11 +113,10 @@ def p_func_call(p):
         p[0] = Node('func_call', p[1], [])
     else:
         p[0] = Node('func_call', p[1], [p[3]])
-
-
+             
 def p_func_call_args(p):
-    '''func_call_args : func_call_args COMMA func_call_arg
-                    | func_call_arg
+    '''func_call_args : func_call_arg
+                    | func_call_args COMMA func_call_arg
     '''
     if (len(p) == 2):
         p[0] = Node('func_call_args', '', [p[1]])
@@ -120,9 +124,7 @@ def p_func_call_args(p):
         p[0] = Node('func_call_arg', '', [p[1], p[3]])
 
 def p_func_call_arg(p):
-    '''func_call_arg : binary_expression
-                    | string_op_expression
-                    | global_var
+    '''func_call_arg : expression
     '''
     p[0] = Node('func_call_arg','', [p[1]])
 
@@ -348,7 +350,7 @@ def p_term(p):
 
 def p_factor_func_call(p):
     '''factor : func_call'''
-    p[0] = Node('factor', '', [p[1]])
+    p[0] = Node('func_call', '', [p[1]])
 
 def p_factor_inverse(p):
     '''factor : MINUS INTEGER
