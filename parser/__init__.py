@@ -143,15 +143,9 @@ def p_statements(p):
                     | statements SEMICOLON statement
     '''
     if (len(p) == 2):
-        if p[1] == ';':
-            p[0] = Node('statements', ';', [])
-        else:
-            p[0] = Node('statements', '', [p[1]])
+        p[0] = Node('statements', '', [p[1]])
     else:
-        if p[2] == ';':
-            p[0] = Node('statements', ';', [p[1]])
-        else:
-            p[0] = Node('statements', '', [p[1], p[2]])
+        p[0] = Node('statements', '', [p[1], p[2]])
 
 def p_statement(p):
     '''statement : logical_op_expression
@@ -208,14 +202,13 @@ def p_for_loop(p):
             p[0] = Node('for_loop', '', [p[3], p[5], p[7], p[9]])
         case 5:
             p[0] = Node('for_loop', '', [p[4]])
+        case 6: 
+            p[0] = Node('for_loop', '', [p[3], p[5]])
         case 7:
             if (p[3] == ';'):
                 p[0] = Node('for_loop', '', [p[6]])
             else:
-                if (p[5] == ')'):
-                    p[0] = Node('for_loop', '', [p[3], p[6]])
-                else:
-                    p[0] = Node('for_loop', '', [p[3], p[5]])
+                p[0] = Node('for_loop', '', [p[3], p[5]])
 
 def p_if_statement(p):
     '''if_statement : IF LPAREN logical_op_expression RPAREN scope 
@@ -235,13 +228,8 @@ def p_return_statement(p):
         case 2:
             p[0] = Node('return_statement', '', [])
         case 3:
-            if (p[2] == ';'):
-                p[0] = Node('return_statement', '', [])
-            else:
-                p[0] = Node('return_statement', '', [p[2]])
-        case 4:
             p[0] = Node('return_statement', '', [p[2]])
-
+        
 def p_string_op(p):
     '''string_op_expression : STRING'''
     p[0] = Node('string', p[1], [])
@@ -340,20 +328,19 @@ def p_factor(p):
                 | FLOAT
                 | IDENTIFIER
                 | GLOBAL_VAR
-                | LPAREN expression RPAREN
-                | LBRACE expression RBRACE
     '''
-    if (len(p) == 4):
-        p[0] = p[2]
+    if (isinstance(p[1], int)):
+        p[0] = Node('int', p[1], [])
+    elif (isinstance(p[1], str)):
+        p[0] = Node('var', p[1], [])
+    elif (isinstance(p[1], float)):
+        p[0] = Node('float', p[1], [])
     else:
-        if (isinstance(p[1], int)):
-            p[0] = Node('int', p[1], [])
-        elif (isinstance(p[1], str)):
-            p[0] = Node('var', p[1], [])
-        elif (isinstance(p[1], float)):
-            p[0] = Node('float', p[1], [])
-        else:
-            print("Invalid factor type")
+        print("Invalid factor type")
+
+def p_factor_paren(p):
+    '''factor : LPAREN expression RPAREN'''
+    p[0] = Node('factor_paren', '', [p[2]])
 
 # Error rule for syntax errors
 def p_error(p):
