@@ -10,10 +10,10 @@ class Node:
         self.value = value
         self.children = children
 
-def p_test(p):
-    '''test : statement
-    '''
-    p[0] = Node('test', '', [p[1]])
+# def p_test(p):
+#     '''test : statement
+#     '''
+#     p[0] = Node('test', '', [p[1]])
 
 # def p_test(p):
 #     """mytest : mytest logical_op_expression 
@@ -129,7 +129,7 @@ def p_func_call_arg(p):
 def p_scope(p):
     '''scope : LBRACE statements RBRACE
                 | LBRACE RBRACE
-                | statements
+                | statement
     '''
     if (len(p) == 4):
         p[0] = Node('scope', '', [p[2]])
@@ -139,10 +139,8 @@ def p_scope(p):
         p[0] = Node('scope', '', [])
 
 def p_statements(p):
-    '''statements : statements statement
-                    | statements SEMICOLON
-                    | SEMICOLON
-                    | statement
+    '''statements : statement
+                    | statements SEMICOLON statement
     '''
     if (len(p) == 2):
         if p[1] == ';':
@@ -157,11 +155,12 @@ def p_statements(p):
 
 def p_statement(p):
     '''statement : logical_op_expression
-                    | assignments
-                    | declarations
+                    | assignment
+                    | declaration
                     | while_loop
                     | for_loop
                     | if_statement
+                    | if_else_statement
                     | return_statement
     '''
     p[0] = Node('statement', '', [p[1]])
@@ -170,38 +169,17 @@ def p_expression(p):
     '''expression : increment_postfix
                     | increment_prefix
                     | decrement_postfix
-                    | decrement_prefix
-                    | binary_expression 
+                    | decrement_prefix 
                     | string_op_expression
+                    | binary_expression
     '''
     p[0] = Node('expression', '', [p[1]])
-
-def p_assignments(p):
-    '''assignments : assignment SEMICOLON assignments
-                    | assignment
-    '''
-    if (len(p) == 2):
-        p[0] = Node('assignment', '', [p[1]])
-    else:
-        p[0] = Node('assignments', '', [p[1], p[3]])
 
 def p_assignment(p):
     '''assignment : IDENTIFIER ASSIGN expression 
                     | GLOBAL_VAR ASSIGN expression 
     '''
-    # if (len(p) == 5):
-    #     p[0] = Node(p[3], [p[1], p[2]], [p[4]])
-    # else:
     p[0] = Node(p[2], p[1],  [p[3]])
-
-def p_declarations(p):
-    '''declarations : declaration declarations
-                    | declaration
-    '''
-    if (len(p) == 2):
-        p[0] = Node('declarations', '', [p[1]])
-    else:
-        p[0] = Node('declarations', '', [p[1], p[2]])
 
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
@@ -222,7 +200,7 @@ def p_for_loop(p):
     '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN scope 
                     | FOR LPAREN RPAREN scope 
                     | FOR LPAREN SEMICOLON SEMICOLON RPAREN scope
-                    | FOR LPAREN logical_op_expression SEMICOLON RPAREN scope
+                    | FOR LPAREN statement RPAREN scope
                     | FOR LPAREN statement SEMICOLON logical_op_expression RPAREN
     '''
     match(len(p)):
@@ -241,12 +219,14 @@ def p_for_loop(p):
 
 def p_if_statement(p):
     '''if_statement : IF LPAREN logical_op_expression RPAREN scope 
-                    | IF LPAREN logical_op_expression RPAREN scope ELSE scope
     '''
-    if (len(p) == 6):
-        p[0] = Node('if_statement', '', [p[3], p[5]])
-    else:
-        p[0] = Node('if_statement', '', [p[3], p[5], p[7]])
+    p[0] = Node('if_statement', '', [p[3], p[5]])
+        
+
+def p_if_else_statement(p):
+    '''if_else_statement : if_statement ELSE scope
+    '''
+    p[0] = Node('if_else_statement', '', [p[1], p[3]])
 
 def p_return_statement(p):
     '''return_statement : RETURN expression  
