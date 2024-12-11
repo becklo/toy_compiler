@@ -71,7 +71,7 @@ def p_external_function_declaration(p):
     p[0] = Node('external_function_declaration', [p[2], p[3]], [p[4]])
 
 def p_function_declaration(p):
-    '''function_declaration : TYPE IDENTIFIER func_dec_params scope
+    '''function_declaration : TYPE IDENTIFIER func_dec_params statement
     '''
     p[0] = Node('function_declaration', [p[1], p[2]], [p[3], p[4]])
 
@@ -127,9 +127,8 @@ def p_func_call_arg(p):
     p[0] = Node('func_call_arg','', [p[1]])
 
 def p_scope(p):
-    '''scope : LBRACE statements RBRACE
+    '''scope : LBRACE statements RBRACE 
                 | LBRACE RBRACE
-                | statement
     '''
     if (len(p) == 4):
         p[0] = Node('scope', '', [p[2]])
@@ -139,13 +138,21 @@ def p_scope(p):
         p[0] = Node('scope', '', [])
 
 def p_statements(p):
-    '''statements : statement
-                    | statements SEMICOLON statement
+    '''statements : statements SEMICOLON statement
+                  | statements SEMICOLON
+                  | statement
+                  | SEMICOLON
     '''
-    if (len(p) == 2):
-        p[0] = Node('statements', '', [p[1]])
-    else:
-        p[0] = Node('statements', '', [p[1], p[2]])
+    match len(p):
+        case 4:
+            p[0] = Node('statements', '', [p[1], p[3]])
+        case 3:
+            p[0] = Node('statements', ';', [p[1]])
+        case 2:
+            if p[1] == ';':
+                p[0] = Node('statements', ';', [])
+            else:
+                p[0] = Node('statements', '', [p[1]])
 
 def p_statement(p):
     '''statement : logical_op_expression
@@ -154,8 +161,8 @@ def p_statement(p):
                     | while_loop
                     | for_loop
                     | if_statement
-                    | if_else_statement
                     | return_statement
+                    | scope
     '''
     p[0] = Node('statement', '', [p[1]])
 
@@ -178,8 +185,8 @@ def p_assignment(p):
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
                     | TYPE GLOBAL_VAR
-                    | TYPE IDENTIFIER ASSIGN scope 
-                    | TYPE GLOBAL_VAR ASSIGN scope 
+                    | TYPE IDENTIFIER ASSIGN statement 
+                    | TYPE GLOBAL_VAR ASSIGN statement 
     '''
     if (len(p) == 3):
         p[0] = Node('declaration', [p[1], p[2]], [])
@@ -187,14 +194,14 @@ def p_declaration(p):
         p[0] = Node('declaration', [p[1], p[2]], [p[4]])
 
 def p_while_loop(p):
-    '''while_loop : WHILE LPAREN logical_op_expression RPAREN scope '''
+    '''while_loop : WHILE LPAREN logical_op_expression RPAREN statement '''
     p[0] = Node('while_loop', '', [p[3], p[5]])
 
 def p_for_loop(p):
-    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN scope 
-                    | FOR LPAREN RPAREN scope 
-                    | FOR LPAREN SEMICOLON SEMICOLON RPAREN scope
-                    | FOR LPAREN statement RPAREN scope
+    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN statement 
+                    | FOR LPAREN RPAREN statement 
+                    | FOR LPAREN SEMICOLON SEMICOLON RPAREN statement
+                    | FOR LPAREN statement RPAREN statement
                     | FOR LPAREN statement SEMICOLON logical_op_expression RPAREN
     '''
     match(len(p)):
@@ -211,15 +218,20 @@ def p_for_loop(p):
                 p[0] = Node('for_loop', '', [p[3], p[5]])
 
 def p_if_statement(p):
-    '''if_statement : IF LPAREN logical_op_expression RPAREN scope 
+    '''if_statement : IF LPAREN logical_op_expression RPAREN statement ELSE statement
+                    | IF LPAREN logical_op_expression RPAREN statement SEMICOLON
     '''
-    p[0] = Node('if_statement', '', [p[3], p[5]])
-        
+    match len(p):
+        case 7:
+            p[0] = Node('if_statement', '', [p[3], p[5]])
+        case 8:
+            p[0] = Node('if_statement', '', [p[3], p[5], p[7]])
 
-def p_if_else_statement(p):
-    '''if_else_statement : if_statement ELSE scope
-    '''
-    p[0] = Node('if_else_statement', '', [p[1], p[3]])
+
+# def p_if_else_statement(p):
+#     '''if_else_statement : IF LPAREN logical_op_expression RPAREN statement ELSE statement
+#     '''
+#     p[0] = Node('if_else_statement', '', [p[3], p[5], p[7]])
 
 def p_return_statement(p):
     '''return_statement : RETURN expression  
@@ -341,6 +353,10 @@ def p_factor(p):
 def p_factor_paren(p):
     '''factor : LPAREN expression RPAREN'''
     p[0] = Node('factor_paren', '', [p[2]])
+
+def p_factor_brace(p):
+    '''factor : LBRACE expression RBRACE'''
+    p[0] = Node('factor_brace', '', [p[2]])
 
 # Error rule for syntax errors
 def p_error(p):
