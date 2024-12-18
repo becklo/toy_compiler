@@ -10,7 +10,7 @@ def main():
     state = None
     
     dot = graphviz.Digraph(comment=infile, format='pdf')
-    dot.size = '1000,1000'
+    dot.size = '1000,1000' # Set size of the image in inches
 
     with open(infile, 'r') as f:
         lines = f.readlines()
@@ -31,8 +31,8 @@ def main():
         if state is not None: # In case we have uncleared state
             dot.node(state, nodetext, shape='box')
                 
-    v = dot.unflatten(stagger=20, fanout=2, chain=2)
-    v.render(f'{infile}.dot', view=False)
+    # v = dot.unflatten(stagger=50, fanout=2, chain=2)
+    dot.render(f'{infile}.dot', view=False)
 
 if __name__ == '__main__':
     main()
