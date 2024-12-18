@@ -1,4 +1,17 @@
 [[package]]
+name = "graphviz"
+version = "0.20.3"
+description = "Simple Python interface for Graphviz"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+dev = ["tox (>=3)", "flake8", "pep8-naming", "wheel", "twine"]
+docs = ["sphinx (>=5,<7)", "sphinx-autodoc-typehints", "sphinx-rtd-theme"]
+test = ["pytest (>=7,<8.1)", "pytest-mock (>=3)", "pytest-cov", "coverage"]
+
+[[package]]
 name = "llvmlite"
 version = "0.43.0"
 description = "lightweight wrapper around basic LLVM functionality"
@@ -37,9 +50,10 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10"
-content-hash = "afcd620cac7ec66e342fcf5755d7a8ef3be16bd94a0acb238d5ae3b9dab7ba56"
+content-hash = "628513c34a7997b47560d59b26e686ef4948ec38ddb021770986a0c5ad174905"
 
 [metadata.files]
+graphviz = []
 llvmlite = []
 numba = []
 numpy = []

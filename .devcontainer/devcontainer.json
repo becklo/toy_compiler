@@ -5,18 +5,15 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"features": {
-//		"ghcr.io/nikobockerman/devcontainer-features/poetry-persistent-cache:1": {}
+		//		"ghcr.io/nikobockerman/devcontainer-features/poetry-persistent-cache:1": {}
 	}
-
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
-
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
-
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
-	"postCreateCommand": "sudo apt update && sudo apt install -y python3-poetry llvm clang",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-poetry llvm clang python-is-python3 graphviz",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -29,11 +26,8 @@
 			]
 		}
 	},
-
 	// Configure tool-specific properties.
 	// "customizations": {},
-
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }
-
