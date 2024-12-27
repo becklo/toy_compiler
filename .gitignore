@@ -1,6 +1,6 @@
 .venv/
 *.pyc
-parser.out
+parser.out*
 parsetab.py
 *.ir
 a.out

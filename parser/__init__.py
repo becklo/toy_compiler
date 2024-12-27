@@ -10,10 +10,10 @@ class Node:
         self.value = value
         self.children = children
 
-# def p_test(p):
-#     '''test : while_loop
-#     '''
-#     p[0] = Node('test', '', [p[1]])
+def p_test(p):
+    '''test : statement
+    '''
+    p[0] = Node('test', '', [p[1]])
 
 # def p_test(p):
 #     """mytest : mytest logical_op_expression 
@@ -34,16 +34,16 @@ class Node:
 
 # Define the grammar rules
 def p_program(p):
-    '''program : program global_var
+    '''program : program include
+                | include
+                | program global_var
                 | global_var
                 | program function_declaration
                 | function_declaration
-                | program SEMICOLON
-                | SEMICOLON
                 | program external_function_declaration
                 | external_function_declaration
-                | program include
-                | include
+                | program SEMICOLON
+                | SEMICOLON
     '''
     if (len(p) == 2):
         if(p[1] == ';'):
@@ -56,14 +56,15 @@ def p_program(p):
         else:
             p[0] = Node('program', '', [p[1], p[2]])
 
-def p_global_var(p):
-    '''global_var : declaration'''
-    p[0] = Node('global_var', '', [p[1]])
-
 def p_include(p):
     ''' include : INCLUDE IDENTIFIER
     '''
     p[0] = Node(p[1], p[2], [])
+
+def p_global_var(p):
+    '''global_var : declaration'''
+    p[0] = Node('global_var', '', [p[1]])
+
 
 def p_external_function_declaration(p):
     '''external_function_declaration : DECLARE TYPE IDENTIFIER func_dec_params
@@ -159,6 +160,7 @@ def p_statement(p):
                     | assignment
                     | declaration
                     | logical_statement
+                    | scope
                     | SEMICOLON
     '''
     if p[1] == ';':
@@ -183,10 +185,10 @@ def p_logical_statement(p):
     p[0] = Node('logical_statement', '', [p[1]])
 
 def p_expression(p):
-    '''expression : increment_postfix
-                    | increment_prefix
-                    | decrement_postfix
-                    | decrement_prefix 
+    '''expression : increment_postfix_expression
+                    | increment_prefix_expression
+                    | decrement_postfix_expression
+                    | decrement_prefix_expression 
                     | string_op_expression
                     | binary_expression
     '''
@@ -214,15 +216,15 @@ def p_while_loop(p):
     p[0] = Node('while_loop', '', [p[3], p[5]])
 
 def p_while_block(p):
-    '''while_block : scope
+    '''while_block : block
     '''
     p[0] = Node('while_block', '', [p[1]])
 
 def p_for_loop(p):
-    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN scope 
-                    | FOR LPAREN RPAREN scope 
-                    | FOR LPAREN SEMICOLON SEMICOLON RPAREN scope
-                    | FOR LPAREN statement RPAREN scope
+    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN for_block 
+                    | FOR LPAREN RPAREN for_block 
+                    | FOR LPAREN SEMICOLON SEMICOLON RPAREN for_block
+                    | FOR LPAREN statement RPAREN for_block
                     | FOR LPAREN statement SEMICOLON logical_op_expression RPAREN
     '''
     match(len(p)):
@@ -238,15 +240,35 @@ def p_for_loop(p):
             else:
                 p[0] = Node('for_loop', '', [p[3], p[5]])
 
+def p_for_block(p):
+    '''for_block : block
+    '''
+    p[0] = Node('for_block', '', [p[1]])
+
 def p_if_statement(p):
-    '''if_statement : IF LPAREN logical_op_expression RPAREN scope ELSE scope
-                    | IF LPAREN logical_op_expression RPAREN scope SEMICOLON
+    '''if_statement : IF LPAREN logical_op_expression RPAREN if_block ELSE if_block
+                    | IF LPAREN logical_op_expression RPAREN if_block SEMICOLON
     '''
     match len(p):
         case 7:
             p[0] = Node('if_statement', '', [p[3], p[5]])
         case 8:
             p[0] = Node('if_statement', '', [p[3], p[5], p[7]])
+
+def p_if_block(p):
+    '''if_block : block
+    '''
+    p[0] = Node('if_block', '', [p[1]])
+
+def p_block(p):
+    '''block : LBRACE statements RBRACE 
+                    | LBRACE RBRACE
+    '''
+    match len(p):
+        case 4:
+            p[0] = Node('block', '', [p[2]])
+        case 3:
+            p[0] = Node('block', '', [])
 
 def p_return_statement(p):
     '''return_statement : RETURN expression  
@@ -262,24 +284,24 @@ def p_string_op(p):
     p[0] = Node('string', p[1], [])
 
 def p_increment_postfix(p):
-    '''increment_postfix : INCREMENT_POSTFIX 
+    '''increment_postfix_expression : INCREMENT_POSTFIX 
     '''
-    p[0] = Node('increment_postfix', p[1], [])
+    p[0] = Node('increment_postfix_expression', p[1], [])
 
 def p_decrement_postfix(p):
-    '''decrement_postfix : DECREMENT_POSTFIX
+    '''decrement_postfix_expression : DECREMENT_POSTFIX
     '''
-    p[0] = Node('decrement_postfix', p[1], [])
+    p[0] = Node('decrement_postfix_expression', p[1], [])
 
 def p_increment_prefix(p):
-    '''increment_prefix : INCREMENT_PREFIX
+    '''increment_prefix_expression : INCREMENT_PREFIX
     '''
-    p[0] = Node('increment_prefix', p[1], [])
+    p[0] = Node('increment_prefix_expression', p[1], [])
 
 def p_decrement_prefix(p):
-    '''decrement_prefix :  DECREMENT_PREFIX 
+    '''decrement_prefix_expression :  DECREMENT_PREFIX 
     '''
-    p[0] = Node('decrement_prefix', p[1], [])
+    p[0] = Node('decrement_prefix_expression', p[1], [])
 
 def p_logical_op_expression(p):
     '''logical_op_expression : logical_op_expression AND logical_op_term
