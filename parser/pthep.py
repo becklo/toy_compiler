@@ -13,7 +13,6 @@ def main():
     dot = graphviz.Digraph(comment=infile, format='pdf')
     dot.size = '1000,1000' # Set size of the image in inches
 
-    color_int = 0
     with open(infile, 'r') as f:
         lines = f.readlines()
         nodetext = ''

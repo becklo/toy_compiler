@@ -11,7 +11,7 @@ class Node:
         self.children = children
 
 def p_test(p):
-    '''test : statement
+    '''test : func_call
     '''
     p[0] = Node('test', '', [p[1]])
 
@@ -133,16 +133,6 @@ def p_func_call_arg(p):
     '''
     p[0] = Node('func_call_arg','', [p[1]])
 
-def p_scope(p):
-    '''scope : LBRACE statements RBRACE 
-                | LBRACE RBRACE
-    '''
-    match len(p):
-        case 4:
-            p[0] = Node('scope', '', [p[2]])
-        case 3:
-            p[0] = Node('scope', '', [])
-
 def p_statements(p):
     '''statements : statement
                   | statements statement
@@ -159,12 +149,24 @@ def p_statement(p):
                     | return_statement
                     | assignment
                     | declaration
+                    | logical_statement
+                    | scope
                     | SEMICOLON
     '''
     if p[1] == ';':
         p[0] = Node(';', '', [])
     else:
         p[0] = Node('statement', '', [p[1]])
+
+def p_scope(p):
+    '''scope : LBRACE statements RBRACE 
+                | LBRACE RBRACE
+    '''
+    match len(p):
+        case 4:
+            p[0] = Node('scope', '', [p[2]])
+        case 3:
+            p[0] = Node('scope', '', [])
 
 def p_iteration_statement(p):
     '''iteration_statement : while_loop
@@ -219,11 +221,12 @@ def p_while_block(p):
     p[0] = Node('while_block', '', [p[1]])
 
 def p_for_loop(p):
-    '''for_loop : FOR LPAREN statement SEMICOLON logical_op_expression SEMICOLON statement RPAREN for_block 
+    '''for_loop : FOR LPAREN expression SEMICOLON logical_op_expression SEMICOLON expression RPAREN for_block 
                     | FOR LPAREN RPAREN for_block 
+                    | FOR LPAREN expression RPAREN for_block
+                    | FOR LPAREN expression SEMICOLON logical_op_expression RPAREN
                     | FOR LPAREN SEMICOLON SEMICOLON RPAREN for_block
-                    | FOR LPAREN statement RPAREN for_block
-                    | FOR LPAREN statement SEMICOLON logical_op_expression RPAREN
+
     '''
     match(len(p)):
         case 10:
