@@ -159,8 +159,6 @@ def p_statement(p):
                     | return_statement
                     | assignment
                     | declaration
-                    | logical_statement
-                    | scope
                     | SEMICOLON
     '''
     if p[1] == ';':

@@ -1,6 +1,7 @@
 import sys
 import re
 import graphviz
+import random
 
 def main():
     """ Parse a file and produces a dot file """
@@ -12,6 +13,7 @@ def main():
     dot = graphviz.Digraph(comment=infile, format='pdf')
     dot.size = '1000,1000' # Set size of the image in inches
 
+    color_int = 0
     with open(infile, 'r') as f:
         lines = f.readlines()
         nodetext = ''
@@ -27,7 +29,8 @@ def main():
             if state is not None and 'shift and go to state' in line:
                 next_state = re.search(r'go to state (\d+)', line).group(1)
                 label_state = re.search(r'(\S+)\s+shift and go to state \d+', line).group(1)
-                dot.edge(state, next_state, label=label_state)
+                random_color = "#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+                dot.edge(state, next_state, label=label_state, color=random_color)
         if state is not None: # In case we have uncleared state
             dot.node(state, nodetext, shape='box')
                 
