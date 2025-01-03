@@ -11,26 +11,9 @@ class Node:
         self.children = children
 
 def p_test(p):
-    '''test : func_call
+    '''test : while_loop
     '''
     p[0] = Node('test', '', [p[1]])
-
-# def p_test(p):
-#     """mytest : mytest logical_op_expression 
-#                 | logical_op_expression
-#                 | mytest SEMICOLON
-#                 | SEMICOLON"""
-#     if len(p) == 3:
-#         if p[2]==';':
-#             p[0] = Node('test', '', [p[1]])
-#         else:
-#             p[0] = Node('test', '', [p[1],p[2]])
-#     else: 
-#         if(p[1] == ';'):
-#             p[0] = Node(';', '', [])
-#         else:
-#             p[0] = Node('test', '', [p[1]])
-
 
 # Define the grammar rules
 def p_program(p):
@@ -217,6 +200,7 @@ def p_while_loop(p):
 
 def p_while_block(p):
     '''while_block : block
+                    | expression
     '''
     p[0] = Node('while_block', '', [p[1]])
 
@@ -258,6 +242,8 @@ def p_if_statement(p):
 
 def p_if_block(p):
     '''if_block : block
+                | expression
+                | return_statement
     '''
     p[0] = Node('if_block', '', [p[1]])
 
@@ -354,27 +340,23 @@ def p_binary_op_expression(p):
     else:
         p[0] = Node(p[2], '', [p[1], p[3]])
 
-def p_term(p):
-    '''binary_term  : binary_term TIMES factor
-                        | binary_term DIVIDE factor
-                        | factor
+def p_binary_term(p):
+    '''binary_term  : binary_term TIMES binary_factor
+                        | binary_term DIVIDE binary_factor
+                        | binary_factor
     '''
     if (len(p) == 4):
         p[0] = Node(p[2], '', [p[1], p[3]])
     else:
         p[0] = Node('binary_term', '', [p[1]])
 
-def p_factor_func_call(p):
-    '''factor : func_call'''
-    p[0] = Node('func_call', '', [p[1]])
-
 def p_factor_inverse(p):
-    '''factor : MINUS INTEGER
+    '''binary_factor : MINUS INTEGER
                 | MINUS FLOAT'''
     p[0] = -p[2]
 
 def p_factor(p):
-    '''factor : INTEGER
+    '''binary_factor : INTEGER
                 | FLOAT
                 | IDENTIFIER
                 | GLOBAL_VAR
@@ -387,6 +369,14 @@ def p_factor(p):
         p[0] = Node('float', p[1], [])
     else:
         print("Invalid factor type")
+
+def p_binary_factor(p):
+    '''binary_factor : factor'''
+    p[0] = Node('binary_factor', '', [p[2]])
+
+def p_factor_func_call(p):
+    '''factor : func_call'''
+    p[0] = Node('func_call', '', [p[1]])
 
 def p_factor_paren(p):
     '''factor : LPAREN expression RPAREN'''
