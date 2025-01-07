@@ -3,7 +3,7 @@ import re
 import graphviz
 import random
 
-def main():
+def produce_dot_file():
     """ Parse a file and produces a dot file """
     
     infile = sys.argv[1] if len(sys.argv) > 1 else 'parser.out'
@@ -35,6 +35,9 @@ def main():
                 
     # v = dot.unflatten(stagger=50, fanout=2, chain=2)
     dot.render(f'{infile}.dot', view=False)
+
+def main():
+    produce_dot_file()
 
 if __name__ == '__main__':
     main()

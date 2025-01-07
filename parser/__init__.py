@@ -10,10 +10,15 @@ class Node:
         self.value = value
         self.children = children
 
-def p_test(p):
-    '''test : while_loop
-    '''
-    p[0] = Node('test', '', [p[1]])
+# precedence = (
+#     ('left', 'MINUS'),
+#     ('right', 'UMINUS'),            # Unary minus operator
+# )
+
+# def p_test(p):
+#     '''test : selection_statement
+#     '''
+#     p[0] = Node('test', '', [p[1]])
 
 # Define the grammar rules
 def p_program(p):
@@ -28,16 +33,17 @@ def p_program(p):
                 | program SEMICOLON
                 | SEMICOLON
     '''
-    if (len(p) == 2):
-        if(p[1] == ';'):
-            p[0] = Node(';', '', [])
-        else:
-            p[0] = Node('program', '', [p[1]])
-    else:
-        if(p[2] == ';'):
-            p[0] = Node('program', '', [p[1]])
-        else:
-            p[0] = Node('program', '', [p[1], p[2]])
+    match len(p):
+        case 2: 
+            if(p[1] == ';'):
+                p[0] = Node(';', '', [])
+            else:
+                p[0] = Node('program', '', [p[1]])
+        case 3:
+            if(p[2] == ';'):
+                p[0] = Node('program', '', [p[1]])
+            else:
+                p[0] = Node('program', '', [p[1], p[2]])
 
 def p_include(p):
     ''' include : INCLUDE IDENTIFIER
@@ -55,9 +61,14 @@ def p_external_function_declaration(p):
     p[0] = Node('external_function_declaration', [p[2], p[3]], [p[4]])
 
 def p_function_declaration(p):
-    '''function_declaration : TYPE IDENTIFIER func_dec_params statement
+    '''function_declaration : TYPE IDENTIFIER func_dec_params function_block
     '''
     p[0] = Node('function_declaration', [p[1], p[2]], [p[3], p[4]])
+
+def p_function_block(p):
+    '''function_block : return_statement
+                    | scope'''
+    p[0] = Node('function_block', '', [p[1]])
 
 def p_func_dec_params(p):
     '''func_dec_params : LPAREN dec_parameters RPAREN
@@ -92,29 +103,6 @@ def p_dec_parameter(p):
     '''dec_parameter : TYPE IDENTIFIER
     '''
     p[0] = Node('dec_parameter', [p[1], p[2]], [])
-
-def p_func_call(p):
-    '''func_call : IDENTIFIER LPAREN func_call_args RPAREN
-                  | IDENTIFIER LPAREN RPAREN  
-    '''
-    if (len(p) == 4):
-        p[0] = Node('func_call', p[1], [])
-    else:
-        p[0] = Node('func_call', p[1], [p[3]])
-             
-def p_func_call_args(p):
-    '''func_call_args : func_call_arg
-                    | func_call_args COMMA func_call_arg
-    '''
-    if (len(p) == 2):
-        p[0] = Node('func_call_args', '', [p[1]])
-    else:
-        p[0] = Node('func_call_arg', '', [p[1], p[3]])
-
-def p_func_call_arg(p):
-    '''func_call_arg : expression
-    '''
-    p[0] = Node('func_call_arg','', [p[1]])
 
 def p_statements(p):
     '''statements : statement
@@ -173,13 +161,13 @@ def p_expression(p):
                     | decrement_postfix_expression
                     | decrement_prefix_expression 
                     | string_op_expression
-                    | binary_expression
+                    | term
     '''
     p[0] = Node('expression', '', [p[1]])
 
 def p_assignment(p):
-    '''assignment : IDENTIFIER ASSIGN expression 
-                    | GLOBAL_VAR ASSIGN expression 
+    '''assignment : IDENTIFIER ASSIGN logical_op_expression 
+                    | GLOBAL_VAR ASSIGN logical_op_expression 
     '''
     p[0] = Node(p[2], p[1],  [p[3]])
 
@@ -199,7 +187,7 @@ def p_while_loop(p):
     p[0] = Node('while_loop', '', [p[3], p[5]])
 
 def p_while_block(p):
-    '''while_block : block
+    '''while_block : scope
                     | expression
     '''
     p[0] = Node('while_block', '', [p[1]])
@@ -226,7 +214,7 @@ def p_for_loop(p):
                 p[0] = Node('for_loop', '', [p[3], p[5]])
 
 def p_for_block(p):
-    '''for_block : block
+    '''for_block : scope
     '''
     p[0] = Node('for_block', '', [p[1]])
 
@@ -241,29 +229,19 @@ def p_if_statement(p):
             p[0] = Node('if_statement', '', [p[3], p[5], p[7]])
 
 def p_if_block(p):
-    '''if_block : block
+    '''if_block : scope
                 | expression
                 | return_statement
     '''
     p[0] = Node('if_block', '', [p[1]])
 
-def p_block(p):
-    '''block : LBRACE statements RBRACE 
-                    | LBRACE RBRACE
-    '''
-    match len(p):
-        case 4:
-            p[0] = Node('block', '', [p[2]])
-        case 3:
-            p[0] = Node('block', '', [])
-
 def p_return_statement(p):
     '''return_statement : RETURN expression  
-                        | RETURN SEMICOLON'''
-    match len(p):
-        case 2:
+                        | RETURN SEMICOLON
+    '''
+    if (p[2] == ';'):
             p[0] = Node('return_statement', '', [])
-        case 3:
+    else:
             p[0] = Node('return_statement', '', [p[2]])
         
 def p_string_op(p):
@@ -321,70 +299,93 @@ def p_logical_factor_expression(p):
     p[0] = Node('logical_factor', '', [p[1]])
 
 def p_binary_cmp_op_expression(p):
-    '''binary_expression : binary_expression EQUAL binary_term
-                    | binary_expression NOT_EQUAL binary_term
-                    | binary_expression GREATER_THAN binary_term
-                    | binary_expression LESS_THAN binary_term
-                    | binary_expression GREATER_EQUAL binary_term
-                    | binary_expression LESS_EQUAL binary_term
+    '''logical_op_expression : expression EQUAL term
+                    | expression NOT_EQUAL term
+                    | expression GREATER_THAN term
+                    | expression LESS_THAN term
+                    | expression GREATER_EQUAL term
+                    | expression LESS_EQUAL term
     '''
     p[0] = Node(p[2], '', [p[1], p[3]])
 
 def p_binary_op_expression(p):
-    '''binary_expression : binary_expression PLUS binary_term
-                    | binary_expression MINUS binary_term
-                    | binary_term
+    '''expression : expression PLUS term
+                    | expression MINUS term
     '''
-    if (len(p) == 2):
-        p[0] = Node('binary_op_expression', '', [p[1]])
-    else:
-        p[0] = Node(p[2], '', [p[1], p[3]])
+    p[0] = Node(p[2], '', [p[1], p[3]])
 
 def p_binary_term(p):
-    '''binary_term  : binary_term TIMES binary_factor
-                        | binary_term DIVIDE binary_factor
-                        | binary_factor
+    '''term : term TIMES factor
+            | term DIVIDE factor
     '''
-    if (len(p) == 4):
-        p[0] = Node(p[2], '', [p[1], p[3]])
-    else:
-        p[0] = Node('binary_term', '', [p[1]])
+    p[0] = Node(p[2], '', [p[1], p[3]])
 
-def p_factor_inverse(p):
-    '''binary_factor : MINUS INTEGER
-                | MINUS FLOAT'''
-    p[0] = -p[2]
+def p_term(p):
+    '''term : factor'''
+    p[0] = Node('term', '', [p[1]])
 
-def p_factor(p):
-    '''binary_factor : INTEGER
-                | FLOAT
-                | IDENTIFIER
-                | GLOBAL_VAR
-    '''
-    if (isinstance(p[1], int)):
-        p[0] = Node('int', p[1], [])
-    elif (isinstance(p[1], str)):
-        p[0] = Node('var', p[1], [])
-    elif (isinstance(p[1], float)):
-        p[0] = Node('float', p[1], [])
-    else:
-        print("Invalid factor type")
+def p_factor_int(p):
+    '''factor : INTEGER'''
+    p[0] = Node('int', p[1], [])
 
-def p_binary_factor(p):
-    '''binary_factor : factor'''
-    p[0] = Node('binary_factor', '', [p[2]])
+def p_factor_float(p):
+    '''factor : FLOAT'''
+    p[0] = Node('float', p[1], [])
+
+# def p_factor_inverse_int(p):
+#     '''factor : MINUS INTEGER %prec UMINUS'''
+#     p[0] = Node('int', -p[2], [])
+
+# def p_factor_inverse_float(p):
+#     '''factor : MINUS FLOAT %prec UMINUS'''
+#     p[0] = Node('float', -p[2], [])
+
+def p_factor_var(p):
+    '''factor : variable'''
+    p[0] = Node('var', p[1], [])
+
+def p_global_variable(p):
+    '''variable : GLOBAL_VAR'''
+    p[0] = Node('global_var', p[1], [])
+
+def p_variable(p):
+    '''variable : IDENTIFIER'''
+    p[0] = Node('var', p[1], [])
 
 def p_factor_func_call(p):
     '''factor : func_call'''
     p[0] = Node('func_call', '', [p[1]])
 
-def p_factor_paren(p):
-    '''factor : LPAREN expression RPAREN'''
-    p[0] = Node('factor_paren', '', [p[2]])
+def p_func_call(p):
+    '''func_call : IDENTIFIER LPAREN func_call_args RPAREN
+                  | IDENTIFIER LPAREN RPAREN  
+    '''
+    if (len(p) == 4):
+        p[0] = Node('func_call', p[1], [])
+    else:
+        p[0] = Node('func_call', p[1], [p[3]])
+             
+def p_func_call_args(p):
+    '''func_call_args : func_call_arg
+                    | func_call_args COMMA func_call_arg
+    '''
+    if (len(p) == 2):
+        p[0] = Node('func_call_args', '', [p[1]])
+    else:
+        p[0] = Node('func_call_arg', '', [p[1], p[3]])
 
-def p_factor_brace(p):
-    '''factor : LBRACE expression RBRACE'''
-    p[0] = Node('factor_brace', '', [p[2]])
+def p_func_call_arg(p):
+    '''func_call_arg : expression
+    '''
+    p[0] = Node('func_call_arg','', [p[1]])
+
+# def p_factor_paren(p):
+#     '''factor : LPAREN expression RPAREN'''
+#     p[0] = Node('factor_paren', '', [p[2]])
+
+# def p_factor_brace(p):
+#     '''factor : LBRACE expression RBRACE'''
+#     p[0] = Node('factor_brace', '', [p[2]])
 
 # Error rule for syntax errors
 def p_error(p):
