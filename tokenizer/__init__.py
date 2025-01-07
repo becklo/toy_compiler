@@ -174,7 +174,7 @@ str Global_str = "String content\n";
 declare int external_function1();
 declare int external_function2(int a, int b);
 declare int printf(str text,...); # variable argument
-int fibonacci(int n) if (n < 2) 1 else fibonacci(n-1)+fibonacci(n-2) # remember if is an expression now so it returns a value, and the latest value in scope is also a return statement so this is implicit return. Also we do not have a scope block because we have defined a function to have an expression, while in expression we can have many scope blocks
+int fibonacci(int n){ if (n < 2) 1 else fibonacci(n-1)+fibonacci(n-2)} # remember if is an expression now so it returns a value, and the latest value in scope is also a return statement so this is implicit return. Also we do not have a scope block because we have defined a function to have an expression, while in expression we can have many scope blocks
 int one() 1; # here we have implicit return of 1
 int two() return 2; # here we have explicit return of 2
 int something(float b) { if (one() < two() and { 5*6 >= 4*6}) { return 1}; return 2;}

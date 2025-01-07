@@ -10,13 +10,8 @@ class Node:
         self.value = value
         self.children = children
 
-# precedence = (
-#     ('left', 'MINUS'),
-#     ('right', 'UMINUS'),            # Unary minus operator
-# )
-
 # def p_test(p):
-#     '''test : selection_statement
+#     '''test : statement
 #     '''
 #     p[0] = Node('test', '', [p[1]])
 
@@ -66,8 +61,8 @@ def p_function_declaration(p):
     p[0] = Node('function_declaration', [p[1], p[2]], [p[3], p[4]])
 
 def p_function_block(p):
-    '''function_block : return_statement
-                    | scope'''
+    '''function_block : scope
+    '''
     p[0] = Node('function_block', '', [p[1]])
 
 def p_func_dec_params(p):
@@ -121,7 +116,6 @@ def p_statement(p):
                     | assignment
                     | declaration
                     | logical_statement
-                    | scope
                     | SEMICOLON
     '''
     if p[1] == ';':
@@ -132,12 +126,15 @@ def p_statement(p):
 def p_scope(p):
     '''scope : LBRACE statements RBRACE 
                 | LBRACE RBRACE
+                | statement
     '''
     match len(p):
         case 4:
             p[0] = Node('scope', '', [p[2]])
         case 3:
             p[0] = Node('scope', '', [])
+        case 2:
+            p[0] = Node('scope', '', [p[1]])
 
 def p_iteration_statement(p):
     '''iteration_statement : while_loop
@@ -188,7 +185,6 @@ def p_while_loop(p):
 
 def p_while_block(p):
     '''while_block : scope
-                    | expression
     '''
     p[0] = Node('while_block', '', [p[1]])
 
@@ -230,8 +226,6 @@ def p_if_statement(p):
 
 def p_if_block(p):
     '''if_block : scope
-                | expression
-                | return_statement
     '''
     p[0] = Node('if_block', '', [p[1]])
 
@@ -333,11 +327,11 @@ def p_factor_float(p):
     p[0] = Node('float', p[1], [])
 
 # def p_factor_inverse_int(p):
-#     '''factor : MINUS INTEGER %prec UMINUS'''
+#     '''factor : MINUS INTEGER'''
 #     p[0] = Node('int', -p[2], [])
 
 # def p_factor_inverse_float(p):
-#     '''factor : MINUS FLOAT %prec UMINUS'''
+#     '''factor : MINUS FLOAT'''
 #     p[0] = Node('float', -p[2], [])
 
 def p_factor_var(p):
