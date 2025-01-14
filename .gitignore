@@ -6,4 +6,4 @@ parsetab.py
 a.out
 *.o
 *.ll
-
+calc*

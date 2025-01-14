@@ -1,44 +1,41 @@
 import ply.yacc as yacc
 import history
 
+from node import Node
+
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
 
-class Node:
-    def __init__(self, type, value, children=[]):
-        self.type = type
-        self.value = value
-        self.children = children
-
-# def p_test(p):
-#     '''test : statement
-#     '''
-#     p[0] = Node('test', '', [p[1]])
+def p_test(p):
+    '''program : expression
+    '''
+    p[0] = Node('program', '', [p[1]])
 
 # Define the grammar rules
-def p_program(p):
-    '''program : program include
-                | include
-                | program global_var
-                | global_var
-                | program function_declaration
-                | function_declaration
-                | program external_function_declaration
-                | external_function_declaration
-                | program SEMICOLON
-                | SEMICOLON
-    '''
-    match len(p):
-        case 2: 
-            if(p[1] == ';'):
-                p[0] = Node(';', '', [])
-            else:
-                p[0] = Node('program', '', [p[1]])
-        case 3:
-            if(p[2] == ';'):
-                p[0] = Node('program', '', [p[1]])
-            else:
-                p[0] = Node('program', '', [p[1], p[2]])
+
+# def p_program(p):
+    # '''program : program include
+    #             | include
+    #             | program global_var
+    #             | global_var
+    #             | program function_declaration
+    #             | function_declaration
+    #             | program external_function_declaration
+    #             | external_function_declaration
+    #             | program SEMICOLON
+    #             | SEMICOLON
+    # '''
+    # match len(p):
+    #     case 2: 
+    #         if(p[1] == ';'):
+    #             p[0] = Node(';', '', [])
+    #         else:
+    #             p[0] = Node('program', '', [p[1]])
+    #     case 3:
+    #         if(p[2] == ';'):
+    #             p[0] = Node('program', '', [p[1]])
+    #         else:
+    #             p[0] = Node('program', '', [p[1], p[2]])
 
 def p_include(p):
     ''' include : INCLUDE IDENTIFIER
@@ -336,7 +333,7 @@ def p_factor_float(p):
 
 def p_factor_var(p):
     '''factor : variable'''
-    p[0] = Node('var', p[1], [])
+    p[0] = Node('var', '', [p[1]])
 
 def p_global_variable(p):
     '''variable : GLOBAL_VAR'''
@@ -388,17 +385,6 @@ def p_error(p):
 # Build the parser
 parser = yacc.yacc()
 
-def pretty_print(node, indent=0):
-    print_string = '  '* indent
-    print_string += str(node.type) +' : '
-    if str(node.type) == '='  and len(node.value) == 2:
-        print_string += '(' + str(node.value[0]) +') ' + str(node.value[1]) +' '
-    else:
-        print_string += str(node.value) +' '
-
-    print(print_string)
-    for child in node.children:
-        pretty_print(child, indent+1)
 
 def main():
     while True:
@@ -408,7 +394,7 @@ def main():
             break
         if not s: continue
         result = parser.parse(s)
-        pretty_print(result)
+        print(result)
 
 if __name__ == '__main__':
     main()
