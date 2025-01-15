@@ -27,7 +27,7 @@ def compile(name, code):
                 func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name="main")
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
-                builder.ret(compile_ast(ast.children[0]))
+                builder.ret(compile_ast(ast.children[0]))  
             case "expression":
                 return compile_ast(ast.children[0])
             case "term":
@@ -42,6 +42,28 @@ def compile(name, code):
                 return builder.sdiv(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
             case "int":
                 return ir.Constant(ir.IntType(32), int(ast.value))
+            case "var":
+                var = builder.alloca(ir.IntType(32), name=ast.value) # this assumes var is of type int
+                return builder.load(var)
+            case "global_var":
+                var = ir.GlobalVariable(module, ir.IntType(32), name=ast.value)
+                var.initializer = ir.Constant(ir.IntType(32), 0)
+                return builder.load(var)
+            case "func_call":
+                func_name = ast.value
+                func_args = tuple(compile_ast(arg) for arg in ast.children)
+                func_type = ir.FunctionType(ir.IntType(32), func_args) 
+                func_call = ir.Function(module, func_type, name=func_name)
+                block = func_call.append_basic_block()
+                builder = ir.IRBuilder(block)
+                return builder.call(func_call, func_args)
+            case "func_call_args":
+                if len(ast.children) == 1:
+                    return compile_ast(ast.children[0])
+                else:
+                    return (compile_ast(ast.children[0]),) + compile_ast(ast.children[1])
+            case "func_call_arg":
+                return compile_ast(ast.children[0])
             # return compile_ast(ast.children[0])
             # case "function_def":
             #     if ast.value[0] == 'int':
@@ -145,10 +167,6 @@ def compile(name, code):
 
 
 def main():
-    """
-    This file demonstrates a trivial function "fpadd" returning the sum of
-    two floating-point numbers.
-    """
     while True:
         try:
             s = input('compiler > ')

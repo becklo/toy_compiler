@@ -331,24 +331,16 @@ def p_factor_float(p):
 #     '''factor : MINUS FLOAT'''
 #     p[0] = Node('float', -p[2], [])
 
-def p_factor_var(p):
-    '''factor : variable'''
-    p[0] = Node('var', '', [p[1]])
-
 def p_global_variable(p):
-    '''variable : GLOBAL_VAR'''
+    '''factor : GLOBAL_VAR'''
     p[0] = Node('global_var', p[1], [])
 
 def p_variable(p):
-    '''variable : IDENTIFIER'''
+    '''factor : IDENTIFIER'''
     p[0] = Node('var', p[1], [])
 
-def p_factor_func_call(p):
-    '''factor : func_call'''
-    p[0] = Node('func_call', '', [p[1]])
-
 def p_func_call(p):
-    '''func_call : IDENTIFIER LPAREN func_call_args RPAREN
+    '''factor : IDENTIFIER LPAREN func_call_args RPAREN
                   | IDENTIFIER LPAREN RPAREN  
     '''
     if (len(p) == 4):
@@ -363,7 +355,7 @@ def p_func_call_args(p):
     if (len(p) == 2):
         p[0] = Node('func_call_args', '', [p[1]])
     else:
-        p[0] = Node('func_call_arg', '', [p[1], p[3]])
+        p[0] = Node('func_call_args', '', [p[1], p[3]])
 
 def p_func_call_arg(p):
     '''func_call_arg : expression
