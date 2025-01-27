@@ -42,21 +42,12 @@ def compile(name, code):
                 # TODO: handle SEMICOLON
                 return compile_ast(ast.children[0])
             case "declaration":
-                type = ast.value[0]
-                match ast.value[0]:
-                    case "int":
-                        type = ir.IntType(32)
-                    case "float":
-                        type = ir.FloatType()                
-                var = builder.alloca(type, name=ast.value[1])
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
-                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1].get_reference()}
-                    return builder.store(value[1], var)
+                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1]}
                 else: 
                    # if not set, save as 0 ? 
                     mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : 0}
-                    return builder.store(0, var)
             case "expression":
                 return compile_ast(ast.children[0])
             case "term":
@@ -112,6 +103,7 @@ def compile(name, code):
             case "int":
                 return (int, ir.Constant(ir.IntType(32), int(ast.value)))
             case "var":
+                # TODO: handle scope
                 definition = mydict[scope_level].get(ast.value[0])
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
@@ -120,17 +112,14 @@ def compile(name, code):
                 
                 match type_name:
                     case "int":
-                        var = builder.alloca(ir.IntType(32), name=ast.value[0])
-                        return (int, builder.load(var))
+                        type = ir.IntType(32)
+                        return_type = int
                     case "float":
-                        var = builder.alloca(ir.FloatType(), name=ast.value[0])
-                        return (float, builder.load(var))
-                    case _:
-                        raise ValueError(f"Unknown type: {type_name}")
-                
-                # lparm = compile_ast(ast.children[0])
-                # var = builder.alloca(lparm[0], name=name)
-                # return builder.load(var)
+                        type = ir.FloatType()          
+                        return_type = float
+                var = builder.alloca(type, name=ast.value[0])
+                builder.store(value, var)
+                return (return_type, builder.load(var))
             case "global_var":
                 lparm = compile_ast(ast.children[0])
                 var = ir.GlobalVariable(module, lparm[0], name=ast.value)
