@@ -7,7 +7,7 @@ from node import Node
 from tokenizer import tokens
 
 def p_test(p):
-    '''program : expression
+    '''program : statements
     '''
     p[0] = Node('program', '', [p[1]])
 
@@ -272,7 +272,10 @@ def p_logical_op_term(p):
     '''logical_op_term : logical_op_term OR logical_factor
                         | logical_factor
     '''
-    p[0] = Node('logical_op_term', '', [p[1]])
+    if (len(p) == 4):
+        p[0] = Node(p[2], '', [p[1], p[3]])
+    else:
+        p[0] = Node('logical_op_term', '', [p[1]])
 
 def p_logical_op_not(p):
     '''logical_op_term : NOT logical_factor

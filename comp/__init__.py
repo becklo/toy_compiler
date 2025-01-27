@@ -6,6 +6,13 @@ block = None
 builder = None
 func_args = None
 
+scoped_definition = dict()
+scope_level = 0 # one scope for now, until scope is implemented
+
+mydict = dict()
+mydict[scope_level] = scoped_definition
+
+
 def compile(name, code):
     ast = parser.parse(code)
 
@@ -28,31 +35,116 @@ def compile(name, code):
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
                 builder.ret(compile_ast(ast.children[0]))  
+            case "statements":
+                for statement in ast.children:
+                    compile_ast(statement)
+            case "statement":
+                # TODO: handle SEMICOLON
+                return compile_ast(ast.children[0])
+            case "declaration":
+                type = ast.value[0]
+                match ast.value[0]:
+                    case "int":
+                        type = ir.IntType(32)
+                    case "float":
+                        type = ir.FloatType()                
+                var = builder.alloca(type, name=ast.value[1])
+                if len(ast.children) > 0:
+                    value = compile_ast(ast.children[0])
+                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1].get_reference()}
+                    return builder.store(value[1], var)
+                else: 
+                   # if not set, save as 0 ? 
+                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : 0}
+                    return builder.store(0, var)
             case "expression":
                 return compile_ast(ast.children[0])
             case "term":
                 return compile_ast(ast.children[0])
+            case "logical_statement":
+                return compile_ast(ast.children[0])
+            case "logical_op_expression":
+                for statement in ast.children:
+                    compile_ast(statement)
+            case "logical_op_term":
+                return compile_ast(ast.children[0])
+            case "logical_factor":
+                if ast.value == "TRUE":
+                    return (int, ir.Constant(ir.IntType(32), 1))
+                elif ast.value == "FALSE":
+                    return (int, ir.Constant(ir.IntType(32), 0))
+                else:
+                    return compile_ast(ast.children[0])
             case "+":
-                return builder.add(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.add(lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fadd(lparm[1], rparm[1]))
+                raise ValueError(f"Cannot add {lparm} and {rparm}")
             case "-":
-                return builder.sub(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.sub(lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fsub(lparm[1], rparm[1]))
+                raise ValueError(f"Cannot sub {lparm} and {rparm}")
             case "*":
-                return builder.mul(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.mul(lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fmul(lparm[1], rparm[1]))
+                raise ValueError(f"Cannot mul {lparm} and {rparm}")
             case "/":
-                return builder.sdiv(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.sdiv(lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fdiv(lparm[1], rparm[1]))
+                raise ValueError(f"Cannot div {lparm} and {rparm}")
+            case ";":
+                return
             case "int":
-                return ir.Constant(ir.IntType(32), int(ast.value))
+                return (int, ir.Constant(ir.IntType(32), int(ast.value)))
             case "var":
-                var = builder.alloca(ir.IntType(32), name=ast.value) # this assumes var is of type int
-                return builder.load(var)
+                definition = mydict[scope_level].get(ast.value[0])
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value[0]}")
+                value = definition.get("value")
+                type_name = definition.get("type")
+                
+                match type_name:
+                    case "int":
+                        var = builder.alloca(ir.IntType(32), name=ast.value[0])
+                        return (int, builder.load(var))
+                    case "float":
+                        var = builder.alloca(ir.FloatType(), name=ast.value[0])
+                        return (float, builder.load(var))
+                    case _:
+                        raise ValueError(f"Unknown type: {type_name}")
+                
+                # lparm = compile_ast(ast.children[0])
+                # var = builder.alloca(lparm[0], name=name)
+                # return builder.load(var)
             case "global_var":
-                var = ir.GlobalVariable(module, ir.IntType(32), name=ast.value)
-                var.initializer = ir.Constant(ir.IntType(32), 0)
+                lparm = compile_ast(ast.children[0])
+                var = ir.GlobalVariable(module, lparm[0], name=ast.value)
+                var.initializer = ir.Constant(lparm[0], 0)
                 return builder.load(var)
             case "func_call":
                 func_name = ast.value
-                func_args = tuple(compile_ast(arg) for arg in ast.children)
-                func_type = ir.FunctionType(ir.IntType(32), func_args) 
+                func_args = ()
+                func_args_type = ()
+                for arg in ast.children:
+                    current_arg = compile_ast(arg)
+                    func_args_type = func_args_type + (current_arg[0],)
+                    func_args = func_args + (current_arg[1],)
+                func_type = ir.FunctionType(ir.IntType(32), func_args_type) 
                 func_call = ir.Function(module, func_type, name=func_name)
                 block = func_call.append_basic_block()
                 builder = ir.IRBuilder(block)
