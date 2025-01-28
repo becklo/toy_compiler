@@ -6,36 +6,36 @@ from node import Node
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
 
-def p_test(p):
-    '''program : statements
-    '''
-    p[0] = Node('program', '', [p[1]])
+# def p_test(p):
+#     '''program : statements
+#     '''
+#     p[0] = Node('program', '', [p[1]])
 
 # Define the grammar rules
 
-# def p_program(p):
-    # '''program : program include
-    #             | include
-    #             | program global_var
-    #             | global_var
-    #             | program function_declaration
-    #             | function_declaration
-    #             | program external_function_declaration
-    #             | external_function_declaration
-    #             | program SEMICOLON
-    #             | SEMICOLON
-    # '''
-    # match len(p):
-    #     case 2: 
-    #         if(p[1] == ';'):
-    #             p[0] = Node(';', '', [])
-    #         else:
-    #             p[0] = Node('program', '', [p[1]])
-    #     case 3:
-    #         if(p[2] == ';'):
-    #             p[0] = Node('program', '', [p[1]])
-    #         else:
-    #             p[0] = Node('program', '', [p[1], p[2]])
+def p_program(p):
+    '''program : program include
+                | include
+                | program global_var
+                | global_var
+                | program function_declaration
+                | function_declaration
+                | program external_function_declaration
+                | external_function_declaration
+                | program SEMICOLON
+                | SEMICOLON
+    '''
+    match len(p):
+        case 2: 
+            if(p[1] == ';'):
+                p[0] = Node(';', '', [])
+            else:
+                p[0] = Node('program', '', [p[1]])
+        case 3:
+            if(p[2] == ';'):
+                p[0] = Node('program', '', [p[1]])
+            else:
+                p[0] = Node('program', '', [p[1], p[2]])
 
 def p_include(p):
     ''' include : INCLUDE IDENTIFIER
@@ -70,7 +70,7 @@ def p_func_dec_params(p):
     if (len(p) == 3):
         p[0] = Node('func_dec_params', '' , [])
     else:
-        p[0] = p[2]
+        p[0] = Node('func_dec_params', '', [p[2]])
 
 def p_expend_parameters(p):
     '''extended_parameters : dec_parameters COMMA THREE_DOTS

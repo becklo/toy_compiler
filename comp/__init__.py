@@ -6,12 +6,13 @@ block = None
 builder = None
 func_args = None
 
-scoped_definition = dict()
-scope_level = 0 # one scope for now, until scope is implemented
+scope_level = 0
 
-mydict = dict()
-mydict[scope_level] = scoped_definition
+mydict_var = dict()
+mydict_var[scope_level] = dict()
 
+mydict_func = dict()
+mydict_func[scope_level] = dict()
 
 def compile(name, code):
     ast = parser.parse(code)
@@ -31,10 +32,8 @@ def compile(name, code):
         func_args = ()
         match ast.type:
             case "program":
-                func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name="main")
-                block = func.append_basic_block()
-                builder = ir.IRBuilder(block)
-                builder.ret(compile_ast(ast.children[0]))  
+                # builder.ret(compile_ast(ast.children[0]))  
+                return compile_ast(ast.children[0])
             case "statements":
                 for statement in ast.children:
                     compile_ast(statement)
@@ -44,10 +43,11 @@ def compile(name, code):
             case "declaration":
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
-                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1]}
+                    # TODO: check if variable type matches declaration type
+                    mydict_var[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1]}
                 else: 
                    # if not set, save as 0 ? 
-                    mydict[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : 0}
+                    mydict_var[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : 0}
             case "expression":
                 return compile_ast(ast.children[0])
             case "term":
@@ -104,7 +104,7 @@ def compile(name, code):
                 return (int, ir.Constant(ir.IntType(32), int(ast.value)))
             case "var":
                 # TODO: handle scope
-                definition = mydict[scope_level].get(ast.value[0])
+                definition = mydict_var[scope_level].get(ast.value[0])
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
                 value = definition.get("value")
@@ -125,19 +125,60 @@ def compile(name, code):
                 var = ir.GlobalVariable(module, lparm[0], name=ast.value)
                 var.initializer = ir.Constant(lparm[0], 0)
                 return builder.load(var)
+            case "function_declaration":
+                param = compile_ast(ast.children[0])
+                if param == ():
+                    mydict_func[scope_level][ast.value[1]] = {"type": ast.value[0], "param" : ()}
+                else:
+                    #TODO: I don't think this works
+                    mydict_func[scope_level][ast.value[1]] = {"type": ast.value[0], "param" : param[1]}
+                return compile_ast(ast.children[1])
+            case "func_dec_params":
+                if ast.value == '':
+                    return ()
+                else: 
+                    return compile_ast(ast.children[0])
+            case "extended_parameters":
+                # TODO: handle extended parameters
+                return
+            case "dec_parameters":
+                if len(ast.children) == 1:
+                    return compile_ast(ast.children[0])
+                else:
+                    return (compile_ast(ast.children[0]),) + compile_ast(ast.children[1])
+            case "dec_parameter":
+                return (ast.value[0], ast.value[1])
+            case "function_block":
+                return compile_ast(ast.children[0])
+            case "scope":
+                if len(ast.children) == 1:
+                    # scope_level += 1
+                    return compile_ast(ast.children[0])
             case "func_call":
-                func_name = ast.value
-                func_args = ()
+                print(ast.value)
+                definition = mydict_func[scope_level].get(ast.value)
+                #TODO: handle scope
+                if definition is None:
+                    raise ValueError(f"Undefined function: {ast.value}")
+                func_args = definition.get("param")
                 func_args_type = ()
-                for arg in ast.children:
-                    current_arg = compile_ast(arg)
-                    func_args_type = func_args_type + (current_arg[0],)
-                    func_args = func_args + (current_arg[1],)
-                func_type = ir.FunctionType(ir.IntType(32), func_args_type) 
-                func_call = ir.Function(module, func_type, name=func_name)
+                for arg in func_args:
+                    func_args_type = func_args_type + (arg[0],)
+                func_type = mydict_func[scope_level][ast.value]["type"]
+                if func_type == "int":
+                    type = ir.IntType(32)
+                elif func_type == "float":
+                    type = ir.FloatType()
+                else:
+                    raise ValueError(f"Unknown function type: {func_type}")
+                func_t = ir.FunctionType(type, func_args_type) 
+                func_call = ir.Function(module, func_t, name=ast.value)
                 block = func_call.append_basic_block()
                 builder = ir.IRBuilder(block)
                 return builder.call(func_call, func_args)
+                # block = func.append_basic_block()
+                # builder = ir.IRBuilder(block)
+                # builder.ret(compile_ast(ast.children[0]))  
             case "func_call_args":
                 if len(ast.children) == 1:
                     return compile_ast(ast.children[0])
