@@ -124,10 +124,10 @@ def compile(name, code):
             case "function_declaration":
                 param = compile_ast(ast.children[0])
                 if param == ():
-                    mydict_func[scope_level][ast.value[1]] = {"type": ast.value[0], "param" : ()}
+                    mydict_func[ast.value[1]] = {"type": ast.value[0], "param" : ()}
                 else:
                     #TODO: I don't think this works
-                    mydict_func[scope_level][ast.value[1]] = {"type": ast.value[0], "param" : param[1]}
+                    mydict_func[ast.value[1]] = {"type": ast.value[0], "param" : param[1]}
                 return compile_ast(ast.children[1])
             case "func_dec_params":
                 if ast.value == '':
@@ -156,14 +156,14 @@ def compile(name, code):
                     return v
             case "func_call":
                 print(ast.value)
-                definition = mydict_func[scope_level].get(ast.value)
+                definition = mydict_func[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func_args = definition.get("param")
                 func_args_type = ()
                 for arg in func_args:
                     func_args_type = func_args_type + (arg[0],)
-                func_type = mydict_func[scope_level][ast.value]["type"]
+                func_type = mydict_func[ast.value]["type"]
                 if func_type == "int":
                     type = ir.IntType(32)
                 elif func_type == "float":
