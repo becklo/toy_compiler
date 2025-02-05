@@ -6,10 +6,10 @@ from node import Node
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
 
-# def p_test(p):
-#     '''program : statements
-#     '''
-#     p[0] = Node('program', '', [p[1]])
+def p_test(p):
+    '''program : statements
+    '''
+    p[0] = Node('program', '', [p[1]])
 
 # Define the grammar rules
 
@@ -70,7 +70,8 @@ def p_func_dec_params(p):
     if (len(p) == 3):
         p[0] = Node('func_dec_params', '' , [])
     else:
-        p[0] = Node('func_dec_params', '', [p[2]])
+        # p[0] = Node('func_dec_params', '', [p[2]])
+        p[0] = p[2]
 
 def p_expend_parameters(p):
     '''extended_parameters : dec_parameters COMMA THREE_DOTS
@@ -301,6 +302,7 @@ def p_binary_cmp_op_expression(p):
                     | expression LESS_EQUAL term
     '''
     p[0] = Node(p[2], '', [p[1], p[3]])
+    
 
 def p_binary_op_expression(p):
     '''expression : expression PLUS term

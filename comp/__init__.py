@@ -1,18 +1,15 @@
 from parser import parser
+from scoped_dict import ScopedDict
 import readline
+
 
 func = None
 block = None
 builder = None
 func_args = None
 
-scope_level = 0
-
-mydict_var = dict()
-mydict_var[scope_level] = dict()
-
-mydict_func = dict()
-mydict_func[scope_level] = dict()
+mydict_var = ScopedDict()
+mydict_func = ScopedDict()
 
 def compile(name, code):
     ast = parser.parse(code)
@@ -32,22 +29,32 @@ def compile(name, code):
         func_args = ()
         match ast.type:
             case "program":
-                # builder.ret(compile_ast(ast.children[0]))  
-                return compile_ast(ast.children[0])
+                func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name="main")
+                block = func.append_basic_block()
+                builder = ir.IRBuilder(block)
+                builder.ret(compile_ast(ast.children[0]))   
+                # return compile_ast(ast.children[0])
             case "statements":
                 for statement in ast.children:
                     compile_ast(statement)
             case "statement":
-                # TODO: handle SEMICOLON
+                if ast.value == ";":
+                    return
                 return compile_ast(ast.children[0])
             case "declaration":
+                match ast.value[0]:
+                    case "int":
+                        type, return_type = ir.IntType(32), int
+                    case "float":
+                        type, return_type = ir.FloatType(), float
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
-                    # TODO: check if variable type matches declaration type
-                    mydict_var[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : value[1]}
                 else: 
-                   # if not set, save as 0 ? 
-                    mydict_var[scope_level][ast.value[1]] = {"type": ast.value[0], "value" : 0}
+                   # not set, put 0 as default value
+                   value = (return_type, ir.Constant(type, 0))
+                var = builder.alloca(type, name=ast.value[1])
+                builder.store(value[1], var)
+                mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
             case "expression":
                 return compile_ast(ast.children[0])
             case "term":
@@ -103,22 +110,11 @@ def compile(name, code):
             case "int":
                 return (int, ir.Constant(ir.IntType(32), int(ast.value)))
             case "var":
-                # TODO: handle scope
-                definition = mydict_var[scope_level].get(ast.value[0])
-                if definition is None:
-                    raise ValueError(f"Undefined variable: {ast.value[0]}")
+                if ast.value[0] in mydict_var:
+                    definition = mydict_var[ast.value[0]]
                 value = definition.get("value")
-                type_name = definition.get("type")
-                
-                match type_name:
-                    case "int":
-                        type = ir.IntType(32)
-                        return_type = int
-                    case "float":
-                        type = ir.FloatType()          
-                        return_type = float
-                var = builder.alloca(type, name=ast.value[0])
-                builder.store(value, var)
+                return_type = definition.get("type")
+                var = definition.get("var")
                 return (return_type, builder.load(var))
             case "global_var":
                 lparm = compile_ast(ast.children[0])
@@ -152,12 +148,15 @@ def compile(name, code):
                 return compile_ast(ast.children[0])
             case "scope":
                 if len(ast.children) == 1:
-                    # scope_level += 1
-                    return compile_ast(ast.children[0])
+                    mydict_func.__push__()
+                    mydict_var.__push__()
+                    v = compile_ast(ast.children[0])
+                    mydict_func.__pop__()
+                    mydict_var.__pop__()
+                    return v
             case "func_call":
                 print(ast.value)
                 definition = mydict_func[scope_level].get(ast.value)
-                #TODO: handle scope
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func_args = definition.get("param")
