@@ -6,10 +6,10 @@ from node import Node
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
 
-# def p_test(p):
-#     '''program : statements
-#     '''
-#     p[0] = Node('program', '', [p[1]])
+def p_test(p):
+    '''program : statements
+    '''
+    p[0] = Node('program', '', [p[1]])
 
 # Define the grammar rules
 

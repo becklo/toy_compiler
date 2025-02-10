@@ -25,7 +25,7 @@ def compile(name, code):
     module.triple = tripple
 
     def compile_ast(ast):
-        global func, block, builder, func_args
+        global func, block, builder, func_args, mydict_var, mydict_func
         func_args = ()
         match ast.type:
             case "program":
@@ -52,6 +52,7 @@ def compile(name, code):
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
+                #TODO check if variable already defined
                 var = builder.alloca(type, name=ast.value[1])
                 builder.store(value[1], var)
                 mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
@@ -110,11 +111,10 @@ def compile(name, code):
             case "int":
                 return (int, ir.Constant(ir.IntType(32), int(ast.value)))
             case "var":
-                if ast.value[0] in mydict_var:
-                    definition = mydict_var[ast.value[0]]
-                value = definition.get("value")
-                return_type = definition.get("type")
-                var = definition.get("var")
+                definition = mydict_var[ast.value[0]]
+                if ast.value[0] is None:
+                    raise ValueError(f"Undefined variable: {ast.value[0]}")
+                value, return_type, var = definition.get("value"), definition.get("type"), definition.get("var")
                 return (return_type, builder.load(var))
             case "global_var":
                 lparm = compile_ast(ast.children[0])
