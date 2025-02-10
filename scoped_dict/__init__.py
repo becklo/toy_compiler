@@ -16,14 +16,10 @@ class ScopedDict:
         self.mydict[self.scope_level] = []
 
     def __setitem__(self, key, value):
-        print(self.mydict)
         self.mydict[self.scope_level].append({key: value})
 
     def __getitem__(self, key):
-        v = (x for x in reversed(self.mydict))
-        scope = next(v,{})
-        g = next((x for x in scope if key in x), {}).get(key, None)
-        return g
+        return next((x for x in next((x for x in reversed(self.mydict)),{}) if key in x), {}).get(key, None)
 
     # def __in__(self, key):  
     #     v = (x for x in reversed(self.mydict))
