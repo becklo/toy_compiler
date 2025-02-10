@@ -21,6 +21,8 @@ class ScopedDict:
     def __getitem__(self, key):
         return next((x for x in next((x for x in reversed(self.mydict)),{}) if key in x), {}).get(key, None)
 
+    def __str__(self):
+        return str(self.mydict)
     # def __in__(self, key):  
     #     v = (x for x in reversed(self.mydict))
     #     next((x for x in v if key in x), {}).get(key, None)
