@@ -220,7 +220,7 @@ def p_if_statement(p):
         case 7:
             p[0] = Node('if_statement', '', [p[3], p[5]])
         case 8:
-            p[0] = Node('if_statement', '', [p[3], p[5], p[7]])
+            p[0] = Node('if_else_statement', '', [p[3], p[5], p[7]])
 
 def p_if_block(p):
     '''if_block : scope

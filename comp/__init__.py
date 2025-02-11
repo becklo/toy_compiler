@@ -107,11 +107,9 @@ def compile(name, code):
                     mydict_var.__pop__()
                     return v
             case "iteration_statement":
-                # TODO: handle iteration statement
-                raise NotImplementedError("Iteration statement not implemented")
+                return compile_ast(ast.children[0])
             case "selection_statement":
-                # TODO: handle selection statement
-                raise NotImplementedError("Selection statement not implemented")
+                return compile_ast(ast.children[0])
             case "logical_statement":
                  return compile_ast(ast.children[0])
             case "expression":
@@ -147,11 +145,26 @@ def compile(name, code):
                 # TODO: handle for block
                 raise NotImplementedError("For block not implemented")
             case "if_statement":
-                # TODO: handle if statement
-                raise NotImplementedError("If statement not implemented")
+                pred = compile_ast(ast.children[0])
+                print(pred)
+                if_block = compile_ast(ast.children[1])
+                print(builder.if_then(pred))
+                out_phi = builder.phi(ir.IntType(32))
+                out_phi.add_incoming(if_block[1], if_block[0])
+                return builder.ret(out_phi) 
+            case "if_else_statement":
+                pred = compile_ast(ast.children[0])
+                if_block = compile_ast(ast.children[1])
+                else_block = compile_ast(ast.children[2])
+                builder.if_else(pred)
+                out_phi = builder.phi(ir.IntType(32))
+                out_phi.add_incoming(if_block[1], if_block[0])
+                out_phi.add_incoming(else_block[1], else_block[0])
+                return builder.ret(out_phi) 
             case "if_block":
-                # TODO: handle if block
-                raise NotImplementedError("If block not implemented")
+                bb = builder.basic_block
+                out_then = compile_ast(ast.children[0])
+                return bb, out_then
             case "return_statement":
                 # TODO: handle return statement
                 raise NotImplementedError("Return statement not implemented")
@@ -171,8 +184,10 @@ def compile(name, code):
                 # TODO: handle decrement prefix
                 raise NotImplementedError("Decrement prefix not implemented")
             case "logical_op_expression":
-                for statement in ast.children:
-                    compile_ast(statement)
+                # for statement in ast.children:
+                #     compile_ast(statement)
+                # TODO: handle several children
+                return compile_ast(ast.children[0])
             case "and":
                 # TODO: handle and
                 raise NotImplementedError("And not implemented")
@@ -194,8 +209,10 @@ def compile(name, code):
             case "logical_factor":
                 return compile_ast(ast.children[0])
             case "==":
-                # TODO: handle ==
-                raise NotImplementedError("== not implemented")
+                x = compile_ast(ast.children[0])
+                y = compile_ast(ast.children[1])
+                # TODO: use type to know if it's a float or int comparison
+                return builder.icmp_signed('==', x[1], y[1])
             case "!=":
                 # TODO: handle !=
                 raise NotImplementedError("!= not implemented")
