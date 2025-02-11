@@ -43,6 +43,53 @@ def compile(name, code):
                 # builder = ir.IRBuilder(block)
                 # builder.ret(compile_ast(ast.children[0]))   
                 return compile_ast(ast.children[0])
+            case "include":
+                # TODO: handle include
+                raise NotImplementedError("Include not implemented")
+            case "global_var":
+                lparm = compile_ast(ast.children[0])
+                var = ir.GlobalVariable(module, lparm[0], name=ast.value)
+                var.initializer = ir.Constant(lparm[0], 0)
+                return builder.load(var)
+            case "external_function_declaration":
+                # TODO: handle external function declaration
+                raise NotImplementedError("External function declaration not implemented")
+            case "function_declaration":
+                func_args = compile_ast(ast.children[0])
+                print(func_args)
+                func_args_type = ()
+                if func_args != ():
+                    for i in range(0, len(func_args), 2):
+                        func_args_type = func_args_type + (helper_get_type(func_args[i]),)
+                func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
+                func_def = ir.Function(module, func_t, name=ast.value[1])
+                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
+                # pass function name to children i.e. fonction block
+                ast.children[1].value = ast.value[1]
+                return compile_ast(ast.children[1])
+            case "function_block":
+                definition = mydict_func[ast.value]
+                if definition is None:
+                    raise ValueError(f"Undefined function: {ast.value}")
+                func = definition.get("func")
+                block = func.append_basic_block()
+                builder = ir.IRBuilder(block)
+                return compile_ast(ast.children[0])
+            case "func_dec_params":
+                if ast.value == '':
+                    return ()
+                else: 
+                    return compile_ast(ast.children[0])
+            case "extended_parameters":
+                # TODO: handle extended parameters
+                raise NotImplementedError("Extended parameters not implemented")
+            case "dec_parameters":
+                if len(ast.children) == 1:
+                    return compile_ast(ast.children[0])
+                else:
+                    return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
+            case "dec_parameter":
+                return (ast.value[0], ast.value[1])
             case "statements":
                 for statement in ast.children:
                     compile_ast(statement)
@@ -50,6 +97,28 @@ def compile(name, code):
                 if ast.value == ";":
                     return
                 return compile_ast(ast.children[0])
+            case "scope":
+                if len(ast.children) == 1:
+                    #TODO: handle scope for function
+                    # mydict_func.__push__()
+                    mydict_var.__push__()
+                    v = compile_ast(ast.children[0])
+                    # mydict_func.pop()
+                    mydict_var.__pop__()
+                    return v
+            case "iteration_statement":
+                # TODO: handle iteration statement
+                raise NotImplementedError("Iteration statement not implemented")
+            case "selection_statement":
+                # TODO: handle selection statement
+                raise NotImplementedError("Selection statement not implemented")
+            case "logical_statement":
+                 return compile_ast(ast.children[0])
+            case "expression":
+                return compile_ast(ast.children[0])
+            case "assignment":
+                # TODO: handle assignment
+                raise NotImplementedError("Assignment not implemented")
             case "declaration":
                 match ast.value[0]:
                     case "int":
@@ -65,24 +134,83 @@ def compile(name, code):
                 var = builder.alloca(type, name=ast.value[1])
                 builder.store(value[1], var)
                 mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
-            case "expression":
-                return compile_ast(ast.children[0])
-            case "term":
-                return compile_ast(ast.children[0])
-            case "logical_statement":
-                return compile_ast(ast.children[0])
+            case "while_loop":
+                # TODO: handle while loop
+                raise NotImplementedError("While loop not implemented")
+            case "while_block":
+                # TODO: handle while block
+                raise NotImplementedError("While block not implemented")
+            case "for_loop":
+                # TODO: handle for loop
+                raise NotImplementedError("For loop not implemented")
+            case "for_block":
+                # TODO: handle for block
+                raise NotImplementedError("For block not implemented")
+            case "if_statement":
+                # TODO: handle if statement
+                raise NotImplementedError("If statement not implemented")
+            case "if_block":
+                # TODO: handle if block
+                raise NotImplementedError("If block not implemented")
+            case "return_statement":
+                # TODO: handle return statement
+                raise NotImplementedError("Return statement not implemented")
+            case "string":
+                # TODO: handle string
+                raise NotImplementedError("String not implemented")
+            case "increment_postfix_expression":
+                # TODO: handle increment postfix
+                raise NotImplementedError("Increment postfix not implemented")
+            case "decrement_postfix_expression":
+                # TODO: handle decrement postfix
+                raise NotImplementedError("Decrement postfix not implemented")
+            case "increment_prefix_expression":
+                # TODO: handle increment prefix
+                raise NotImplementedError("Increment prefix not implemented")
+            case "decrement_prefix_expression":
+                # TODO: handle decrement prefix
+                raise NotImplementedError("Decrement prefix not implemented")
             case "logical_op_expression":
                 for statement in ast.children:
                     compile_ast(statement)
+            case "and":
+                # TODO: handle and
+                raise NotImplementedError("And not implemented")
             case "logical_op_term":
                 return compile_ast(ast.children[0])
-            case "logical_factor":
+            case "or": 
+                # TODO: handle or
+                raise NotImplementedError("Or not implemented")
+            case "logical_op_not":
+                # TODO: handle logical op not
+                raise NotImplementedError("Logical op not not implemented")
+            case "logical_op_factor":
                 if ast.value == "TRUE":
                     return (int, ir.Constant(ir.IntType(32), 1))
                 elif ast.value == "FALSE":
                     return (int, ir.Constant(ir.IntType(32), 0))
                 else:
-                    return compile_ast(ast.children[0])
+                    raise ValueError("Unknown logical factor")
+            case "logical_factor":
+                return compile_ast(ast.children[0])
+            case "==":
+                # TODO: handle ==
+                raise NotImplementedError("== not implemented")
+            case "!=":
+                # TODO: handle !=
+                raise NotImplementedError("!= not implemented")
+            case ">":
+                # TODO: handle >
+                raise NotImplementedError("> not implemented")
+            case "<":
+                # TODO: handle <
+                raise NotImplementedError("< not implemented")
+            case ">=":
+                # TODO: handle >=
+                raise NotImplementedError(">= not implemented")
+            case "<=":
+                # TODO: handle <=
+                raise NotImplementedError("<= not implemented")
             case "+":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
@@ -98,7 +226,7 @@ def compile(name, code):
                     return (int, builder.sub(lparm[1], rparm[1]))
                 if (lparm[0] is float and rparm[0] is float):
                     return (float, builder.fsub(lparm[1], rparm[1]))
-                raise ValueError(f"Cannot sub {lparm} and {rparm}")
+                raise ValueError(f"Cannot sub {lparm} and {rparm}")          
             case "*":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
@@ -115,66 +243,18 @@ def compile(name, code):
                 if (lparm[0] is float and rparm[0] is float):
                     return (float, builder.fdiv(lparm[1], rparm[1]))
                 raise ValueError(f"Cannot div {lparm} and {rparm}")
-            case ";":
-                return
+            case "term":
+                return compile_ast(ast.children[0])
             case "int":
                 return (int, ir.Constant(ir.IntType(32), int(ast.value)))
+            case "float":
+                return (float, ir.Constant(ir.FloatType(), float(ast.value)))
             case "var":
                 definition = mydict_var[ast.value[0]]
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
                 value, return_type, var = definition.get("value"), definition.get("type"), definition.get("var")
                 return (return_type, builder.load(var))
-            case "global_var":
-                lparm = compile_ast(ast.children[0])
-                var = ir.GlobalVariable(module, lparm[0], name=ast.value)
-                var.initializer = ir.Constant(lparm[0], 0)
-                return builder.load(var)
-            case "function_declaration":
-                func_args = compile_ast(ast.children[0])
-                print(func_args)
-                func_args_type = ()
-                if func_args != ():
-                    for i in range(0, len(func_args), 2):
-                        func_args_type = func_args_type + (helper_get_type(func_args[i]),)
-                func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
-                func_def = ir.Function(module, func_t, name=ast.value[1])
-                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
-                # pass function name to children i.e. fonction block
-                ast.children[1].value = ast.value[1]
-                return compile_ast(ast.children[1])
-            case "func_dec_params":
-                if ast.value == '':
-                    return ()
-                else: 
-                    return compile_ast(ast.children[0])
-            case "extended_parameters":
-                # TODO: handle extended parameters
-                return
-            case "dec_parameters":
-                if len(ast.children) == 1:
-                    return compile_ast(ast.children[0])
-                else:
-                    return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
-            case "dec_parameter":
-                return (ast.value[0], ast.value[1])
-            case "function_block":
-                definition = mydict_func[ast.value]
-                if definition is None:
-                    raise ValueError(f"Undefined function: {ast.value}")
-                func = definition.get("func")
-                block = func.append_basic_block()
-                builder = ir.IRBuilder(block)
-                return compile_ast(ast.children[0])
-            case "scope":
-                if len(ast.children) == 1:
-                    #TODO: handle scope for function
-                    # mydict_func.__push__()
-                    mydict_var.__push__()
-                    v = compile_ast(ast.children[0])
-                    # mydict_func.__pop__()
-                    mydict_var.__pop__()
-                    return v
             case "func_call":             
                 definition = mydict_func[ast.value]
                 if definition is None:
@@ -194,6 +274,8 @@ def compile(name, code):
                     return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
             case "func_call_arg":
                 return compile_ast(ast.children[0])
+            case ";":
+                return
             # return compile_ast(ast.children[0])
             # case "function_def":
             #     if ast.value[0] == 'int':
