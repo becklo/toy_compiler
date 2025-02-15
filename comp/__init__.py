@@ -56,7 +56,6 @@ def compile(name, code):
                 raise NotImplementedError("External function declaration not implemented")
             case "function_declaration":
                 func_args = compile_ast(ast.children[0])
-                print(func_args)
                 func_args_type = ()
                 if func_args != ():
                     for i in range(0, len(func_args), 2):
@@ -91,8 +90,9 @@ def compile(name, code):
             case "dec_parameter":
                 return (ast.value[0], ast.value[1])
             case "statements":
-                for statement in ast.children:
-                    compile_ast(statement)
+                # for statement in ast.children:
+                # TODO handle several children
+                return compile_ast(ast.children[0])
             case "statement":
                 if ast.value == ";":
                     return
@@ -146,20 +146,21 @@ def compile(name, code):
                 raise NotImplementedError("For block not implemented")
             case "if_statement":
                 pred = compile_ast(ast.children[0])
-                print(pred)
-                if_block = compile_ast(ast.children[1])
-                print(builder.if_then(pred))
+                with builder.if_then(pred):
+                    if_block = compile_ast(ast.children[1])
                 out_phi = builder.phi(ir.IntType(32))
-                out_phi.add_incoming(if_block[1], if_block[0])
+                out_phi.add_incoming(if_block[1][1], if_block[0])
                 return builder.ret(out_phi) 
             case "if_else_statement":
                 pred = compile_ast(ast.children[0])
-                if_block = compile_ast(ast.children[1])
-                else_block = compile_ast(ast.children[2])
-                builder.if_else(pred)
+                with builder.if_else(pred) as (then, otherwise):
+                    with then:
+                        if_block = compile_ast(ast.children[1])
+                    with otherwise:
+                        else_block = compile_ast(ast.children[2])
                 out_phi = builder.phi(ir.IntType(32))
-                out_phi.add_incoming(if_block[1], if_block[0])
-                out_phi.add_incoming(else_block[1], else_block[0])
+                out_phi.add_incoming(if_block[1][1], if_block[0])
+                out_phi.add_incoming(else_block[1][1], else_block[0])
                 return builder.ret(out_phi) 
             case "if_block":
                 bb = builder.basic_block
