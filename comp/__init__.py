@@ -68,6 +68,7 @@ def compile(name, code):
                 return compile_ast(ast.children[1])
             case "function_block":
                 definition = mydict_func[ast.value]
+                print(mydict_func)
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func = definition.get("func")
@@ -90,9 +91,10 @@ def compile(name, code):
             case "dec_parameter":
                 return (ast.value[0], ast.value[1])
             case "statements":
-                # for statement in ast.children:
-                # TODO handle several children
-                return compile_ast(ast.children[0])
+                if len(ast.children) == 1 or (len(ast.children) == 2 and ast.children[1].type == ";"):
+                    return compile_ast(ast.children[0])
+                else:
+                    return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
             case "statement":
                 if ast.value == ";":
                     return
@@ -100,10 +102,10 @@ def compile(name, code):
             case "scope":
                 if len(ast.children) == 1:
                     #TODO: handle scope for function
-                    # mydict_func.__push__()
+                    mydict_func.__push__()
                     mydict_var.__push__()
                     v = compile_ast(ast.children[0])
-                    # mydict_func.pop()
+                    mydict_func.__pop__()
                     mydict_var.__pop__()
                     return v
             case "iteration_statement":
@@ -275,6 +277,7 @@ def compile(name, code):
                 return (return_type, builder.load(var))
             case "func_call":             
                 definition = mydict_func[ast.value]
+                print(mydict_func)
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func_def = definition.get("func")
