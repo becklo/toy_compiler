@@ -38,10 +38,6 @@ def compile(name, code):
         func_args = ()
         match ast.type:
             case "program":
-                # func = ir.Function(module, ir.FunctionType(ir.IntType(32), ()), name="main")
-                # block = func.append_basic_block()
-                # builder = ir.IRBuilder(block)
-                # builder.ret(compile_ast(ast.children[0]))   
                 return compile_ast(ast.children[0])
             case "include":
                 # TODO: handle include
@@ -68,13 +64,15 @@ def compile(name, code):
                 return compile_ast(ast.children[1])
             case "function_block":
                 definition = mydict_func[ast.value]
-                print(mydict_func)
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func = definition.get("func")
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
-                return compile_ast(ast.children[0])
+                return_value = compile_ast(ast.children[0])
+                #TODO: handle not return value
+                builder.ret(return_value[-1])
+                return return_value
             case "func_dec_params":
                 if ast.value == '':
                     return ()
@@ -96,12 +94,9 @@ def compile(name, code):
                 else:
                     return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
             case "statement":
-                if ast.value == ";":
-                    return
                 return compile_ast(ast.children[0])
             case "scope":
                 if len(ast.children) == 1:
-                    #TODO: handle scope for function
                     mydict_func.__push__()
                     mydict_var.__push__()
                     v = compile_ast(ast.children[0])
@@ -134,6 +129,7 @@ def compile(name, code):
                 var = builder.alloca(type, name=ast.value[1])
                 builder.store(value[1], var)
                 mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
+                return (return_type, value[1])
             case "while_loop":
                 # TODO: handle while loop
                 raise NotImplementedError("While loop not implemented")
@@ -187,14 +183,13 @@ def compile(name, code):
                 # TODO: handle decrement prefix
                 raise NotImplementedError("Decrement prefix not implemented")
             case "logical_op_expression":
-                # for statement in ast.children:
-                #     compile_ast(statement)
                 # TODO: handle several children
                 return compile_ast(ast.children[0])
             case "and":
                 # TODO: handle and
                 raise NotImplementedError("And not implemented")
             case "logical_op_term":
+                # TODO: handle several children
                 return compile_ast(ast.children[0])
             case "or": 
                 # TODO: handle or
@@ -281,13 +276,14 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func_def = definition.get("func")
+                func_type = definition.get("type")
                 func_args = ()
                 func_arg_list = []
                 if len(ast.children) > 0:
                     func_args = compile_ast(ast.children[0])
                 for i in range(1, len(func_args), 2):
                     func_arg_list.append(func_args[i]) 
-                return builder.call(func_def, func_arg_list)
+                return (func_type, builder.call(func_def, func_arg_list))
             case "func_call_args":
                 if len(ast.children) == 1:
                     return compile_ast(ast.children[0])

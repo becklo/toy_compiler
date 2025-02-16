@@ -10,7 +10,6 @@ class ScopedDict:
         self.mydict = [{}]
 
     def __setitem__(self, key, value):
-        print(self.mydict)
         self.mydict[-1].update({key: value})
 
     def __getitem__(self, key):
