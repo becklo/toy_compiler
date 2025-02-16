@@ -25,7 +25,6 @@ tokens = [
    'LBRACE',
    'IDENTIFIER',
    'TYPE',
-   'ASSIGN',
    'COMMA',
    'SEMICOLON',
    'STRING',
@@ -38,6 +37,7 @@ tokens = [
    'LESS_THAN',
    'GREATER_EQUAL',
    'LESS_EQUAL',
+   'ASSIGN',
    'GLOBAL_VAR',
    'INCREMENT_PREFIX',
    'DECREMENT_PREFIX',
@@ -61,17 +61,17 @@ t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 t_LBRACE  = r'\{'
 t_RBRACE  = r'\}'
+t_EQUAL = r'\=\='
+t_NOT_EQUAL = r'\!\='
+t_GREATER_EQUAL = r'\>\='
+t_LESS_EQUAL = r'\<\='
 t_ASSIGN  = r'\='
 t_COMMA   = r'\,'
 t_SEMICOLON = r'\;'
 t_THREE_DOTS = r'\.{3}'
 t_DOT     = r'\.'
-t_EQUAL = r'\=\='
-t_NOT_EQUAL = r'\!\='
 t_GREATER_THAN = r'\>'
 t_LESS_THAN = r'\<'
-t_GREATER_EQUAL = r'\>\='
-t_LESS_EQUAL = r'\<\='
 t_ignore_COMMENT = r'\#.*'
 
 def t_AND(t):

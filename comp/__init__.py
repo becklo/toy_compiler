@@ -71,7 +71,11 @@ def compile(name, code):
                 builder = ir.IRBuilder(block)
                 return_value = compile_ast(ast.children[0])
                 #TODO: handle not return value
-                builder.ret(return_value[-1])
+                print(return_value)
+                if return_value[-1].__class__ is not ir.Ret:
+                    print(return_value[-1])
+                    builder.ret(return_value[-1])
+                    print("in ret")
                 return return_value
             case "func_dec_params":
                 if ast.value == '':
@@ -144,14 +148,14 @@ def compile(name, code):
                 raise NotImplementedError("For block not implemented")
             case "if_statement":
                 pred = compile_ast(ast.children[0])
-                with builder.if_then(pred):
+                with builder.if_then(pred[1]):
                     if_block = compile_ast(ast.children[1])
                 out_phi = builder.phi(ir.IntType(32))
                 out_phi.add_incoming(if_block[1][1], if_block[0])
-                return builder.ret(out_phi) 
+                return (if_block[1][0], builder.ret(out_phi)) 
             case "if_else_statement":
                 pred = compile_ast(ast.children[0])
-                with builder.if_else(pred) as (then, otherwise):
+                with builder.if_else(pred[1]) as (then, otherwise):
                     with then:
                         if_block = compile_ast(ast.children[1])
                     with otherwise:
@@ -159,7 +163,7 @@ def compile(name, code):
                 out_phi = builder.phi(ir.IntType(32))
                 out_phi.add_incoming(if_block[1][1], if_block[0])
                 out_phi.add_incoming(else_block[1][1], else_block[0])
-                return builder.ret(out_phi) 
+                return (if_block[1][0], builder.ret(out_phi))
             case "if_block":
                 bb = builder.basic_block
                 out_then = compile_ast(ast.children[0])
@@ -183,13 +187,11 @@ def compile(name, code):
                 # TODO: handle decrement prefix
                 raise NotImplementedError("Decrement prefix not implemented")
             case "logical_op_expression":
-                # TODO: handle several children
                 return compile_ast(ast.children[0])
             case "and":
                 # TODO: handle and
                 raise NotImplementedError("And not implemented")
             case "logical_op_term":
-                # TODO: handle several children
                 return compile_ast(ast.children[0])
             case "or": 
                 # TODO: handle or
@@ -207,25 +209,54 @@ def compile(name, code):
             case "logical_factor":
                 return compile_ast(ast.children[0])
             case "==":
-                x = compile_ast(ast.children[0])
-                y = compile_ast(ast.children[1])
-                # TODO: use type to know if it's a float or int comparison
-                return builder.icmp_signed('==', x[1], y[1])
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('==', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case "!=":
-                # TODO: handle !=
-                raise NotImplementedError("!= not implemented")
+                #TODO: for some reason this is not working, issue is in lexer
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('!=', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('!=', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case ">":
-                # TODO: handle >
-                raise NotImplementedError("> not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('>', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('>', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case "<":
-                # TODO: handle <
-                raise NotImplementedError("< not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('<', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('<', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case ">=":
-                # TODO: handle >=
-                raise NotImplementedError(">= not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('>=', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('>=', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case "<=":
-                # TODO: handle <=
-                raise NotImplementedError("<= not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                if (lparm[0] is int and rparm[0] is int):
+                    return (int, builder.icmp_signed('<=', lparm[1], rparm[1]))
+                if (lparm[0] is float and rparm[0] is float):
+                    return (float, builder.fcmp_unordered('<=', lparm[1], rparm[1]))
+                raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case "+":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
@@ -272,7 +303,6 @@ def compile(name, code):
                 return (return_type, builder.load(var))
             case "func_call":             
                 definition = mydict_func[ast.value]
-                print(mydict_func)
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
                 func_def = definition.get("func")
