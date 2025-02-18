@@ -70,7 +70,7 @@ def compile(name, code):
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
                 return_value = compile_ast(ast.children[0])
-                #TODO: handle not return value
+                #TODO: update to support no return value
                 if return_value[-1].__class__ is not ir.Ret:
                     builder.ret(return_value[-1])
                 return return_value
@@ -147,6 +147,31 @@ def compile(name, code):
                 # TODO: handle while block
                 raise NotImplementedError("While block not implemented")
             case "for_loop":
+                # TODO: handle for loop
+                raise NotImplementedError("For loop not implemented")
+            case "for_loop_init_cond_iter":
+                fn = ir.Function(module, ir.FunctionType(ir.VoidType(), ()), name='for_loop')
+                loophead = fn.append_basic_block('loop.header')
+                loopbody = fn.append_basic_block('loop.body')
+                loopend = fn.append_basic_block('loop.end')
+
+                builder.branch(loophead)
+                builder.position_at_end(loophead)
+
+                init = compile_ast(ast.children[0])
+                cond = compile_ast(ast.children[1])
+
+                builder.cbranch(cond[1], loopbody, loopend)
+                builder.position_at_end(loopbody)
+
+                iter = compile_ast(ast.children[2])
+                builder.branch(loophead)
+                builder.position_at_end(loopend)
+                return (None, None)
+            case "for_loop_iter":
+                # TODO: handle for loop
+                raise NotImplementedError("For loop not implemented")
+            case "for_loop_init_cond":
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
             case "for_block":

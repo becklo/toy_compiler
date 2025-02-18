@@ -196,16 +196,16 @@ def p_for_loop(p):
     '''
     match(len(p)):
         case 10:
-            p[0] = Node('for_loop', '', [p[3], p[5], p[7], p[9]])
+            p[0] = Node('for_loop_init_cond_iter', '', [p[3], p[5], p[7], p[9]])
         case 5:
             p[0] = Node('for_loop', '', [p[4]])
         case 6: 
-            p[0] = Node('for_loop', '', [p[3], p[5]])
+            p[0] = Node('for_loop_iter', '', [p[3], p[5]])
         case 7:
             if (p[3] == ';'):
                 p[0] = Node('for_loop', '', [p[6]])
             else:
-                p[0] = Node('for_loop', '', [p[3], p[5]])
+                p[0] = Node('for_loop_init_cond', '', [p[3], p[5]])
 
 def p_for_block(p):
     '''for_block : scope
