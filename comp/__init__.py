@@ -71,11 +71,8 @@ def compile(name, code):
                 builder = ir.IRBuilder(block)
                 return_value = compile_ast(ast.children[0])
                 #TODO: handle not return value
-                print(return_value)
                 if return_value[-1].__class__ is not ir.Ret:
-                    print(return_value[-1])
                     builder.ret(return_value[-1])
-                    print("in ret")
                 return return_value
             case "func_dec_params":
                 if ast.value == '':
@@ -129,7 +126,8 @@ def compile(name, code):
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
-                #TODO check if variable already defined in scope
+                if mydict_var.in_scope(ast.value[1]):
+                    raise ValueError(f"Variable {ast.value[1]} already defined in this scope")
                 var = builder.alloca(type, name=ast.value[1])
                 builder.store(value[1], var)
                 mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}

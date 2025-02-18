@@ -17,4 +17,7 @@ class ScopedDict:
 
     def __str__(self):
         return str(self.mydict)
+    
+    def in_scope(self, key):
+        return key in self.mydict[-1]
 
