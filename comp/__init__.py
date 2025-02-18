@@ -112,9 +112,17 @@ def compile(name, code):
                  return compile_ast(ast.children[0])
             case "expression":
                 return compile_ast(ast.children[0])
-            case "assignment":
-                # TODO: handle assignment
-                raise NotImplementedError("Assignment not implemented")
+            case "=":
+                definition = mydict_var[ast.value[0]]
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value[0]}")
+                var = definition.get("var")
+                value = compile_ast(ast.children[0])
+                if value[0] != definition.get("type"):
+                    raise ValueError(f"Cannot assign {value[0]} to {definition.get('type')}")
+                builder.store(value[1], var)
+                mydict_var[ast.value[0]] = {"type": value[0], "value" : value, "var" : var}
+                return value
             case "declaration":
                 match ast.value[0]:
                     case "int":
