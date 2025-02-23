@@ -13,6 +13,7 @@ reserved = {
 
 # List of token names.   This is always required
 tokens = [
+   'NOT_EQUAL',
    'FLOAT',
    'INTEGER',
    'PLUS',
@@ -23,7 +24,6 @@ tokens = [
    'RPAREN',
    'RBRACE',
    'LBRACE',
-   'IDENTIFIER',
    'TYPE',
    'COMMA',
    'SEMICOLON',
@@ -32,7 +32,6 @@ tokens = [
    'THREE_DOTS',
    'DOT',
    'EQUAL',
-   'NOT_EQUAL',
    'GREATER_THAN',
    'LESS_THAN',
    'GREATER_EQUAL',
@@ -47,7 +46,8 @@ tokens = [
    'OR',
    'NOT',
    'TRUE',
-   'FALSE'
+   'FALSE',
+   'IDENTIFIER'
 ]
 
 tokens += list(reserved.values())
@@ -62,7 +62,7 @@ t_RPAREN  = r'\)'
 t_LBRACE  = r'\{'
 t_RBRACE  = r'\}'
 t_EQUAL = r'\=\='
-t_NOT_EQUAL = r'\!\='
+t_NOT_EQUAL = r'!='
 t_GREATER_EQUAL = r'\>\='
 t_LESS_EQUAL = r'\<\='
 t_ASSIGN  = r'\='
@@ -83,7 +83,7 @@ def t_OR(t):
     return t
 
 def t_NOT(t):
-    r'!|not|NOT'
+    r'\!(?!=)|not|NOT'
     return t
 
 def t_TRUE(t):
