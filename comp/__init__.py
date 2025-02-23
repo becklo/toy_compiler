@@ -223,13 +223,23 @@ def compile(name, code):
             case "logical_op_expression":
                 return compile_ast(ast.children[0])
             case "and":
-                # TODO: handle and
-                raise NotImplementedError("And not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                # TODO: support var
+                if ((lparm[0] is int and lparm[1].constant != 0) and ((rparm[0] is int and rparm[1].constant != 0))):
+                    return (int, ir.Constant(ir.IntType(32), 1))
+                else:
+                    return (int, ir.Constant(ir.IntType(32), 0))
             case "logical_op_term":
                 return compile_ast(ast.children[0])
             case "or": 
-                # TODO: handle or
-                raise NotImplementedError("Or not implemented")
+                lparm = compile_ast(ast.children[0])
+                rparm = compile_ast(ast.children[1])
+                # TODO: support var
+                if ((lparm[0] is int and lparm[1].constant != 0) or ((rparm[0] is int and rparm[1].constant != 0))):
+                    return (int, ir.Constant(ir.IntType(32), 1))
+                else:
+                    return (int, ir.Constant(ir.IntType(32), 0))
             case "logical_op_not":
                 # TODO: handle logical op not
                 raise NotImplementedError("Logical op not not implemented")
@@ -251,7 +261,6 @@ def compile(name, code):
                     return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
                 raise ValueError(f"Cannot compare {lparm} and {rparm}")
             case "!=":
-                #TODO: for some reason this is not working, issue is in lexer
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
                 if (lparm[0] is int and rparm[0] is int):
