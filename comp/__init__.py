@@ -282,8 +282,24 @@ def compile(name, code):
             case "or": 
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
+
+                if lparm[1].__class__ is not ir.Constant: 
+                    definition = mydict_var[lparm[-1]]
+                    if definition is None:
+                        raise ValueError(f"Undefined variable: {lparam[-1]}")
+                    l_value = definition.get("value")
+                else: 
+                    l_value = lparm[1].constant
+
+                if rparm[1].__class__ is not ir.Constant: 
+                    definition = mydict_var[rparm[-1]]
+                    if definition is None:
+                        raise ValueError(f"Undefined variable: {rparm[-1]}")
+                    r_value = definition.get("value")
+                else: 
+                    r_value = rparm[1].constant
                 # TODO: support var
-                if ((lparm[0] is int and lparm[1].constant != 0) or ((rparm[0] is int and rparm[1].constant != 0))):
+                if ((lparm[0] is int and l_value != 0) or ((rparm[0] is int and r_value != 0))):
                     return (int, ir.Constant(ir.IntType(32), 1))
                 else:
                     return (int, ir.Constant(ir.IntType(32), 0))
