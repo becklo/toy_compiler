@@ -209,22 +209,61 @@ def compile(name, code):
                 # TODO: handle string
                 raise NotImplementedError("String not implemented")
             case "increment_postfix_expression":
-                # TODO: handle increment postfix
-                raise NotImplementedError("Increment postfix not implemented")
+                definition = mydict_var[ast.value]
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value}")
+                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
+                print(value)
+                inc_value = value[1].constant +1
+                new_value = (int, ir.Constant(ir.IntType(32), inc_value))
+                builder.store(new_value[1], var)
+                mydict_var[ast.value[0]] = {"type": type, "value" : new_value, "var" : var}
+                return value
             case "decrement_postfix_expression":
-                # TODO: handle decrement postfix
-                raise NotImplementedError("Decrement postfix not implemented")
+                definition = mydict_var[ast.value]
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value}")
+                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
+                print(value)
+                inc_value = value[1].constant -1
+                new_value = (int, ir.Constant(ir.IntType(32), inc_value))
+                builder.store(new_value[1], var)
+                mydict_var[ast.value[0]] = {"type": type, "value" : new_value, "var" : var}
+                return value
             case "increment_prefix_expression":
-                # TODO: handle increment prefix
-                raise NotImplementedError("Increment prefix not implemented")
+                definition = mydict_var[ast.value]
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value}")
+                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
+                print(value)
+                inc_value = value[1].constant +1
+                value = (int, ir.Constant(ir.IntType(32), inc_value))
+                builder.store(value[1], var)
+                mydict_var[ast.value[0]] = {"type": type, "value" : value, "var" : var}
+                return value
             case "decrement_prefix_expression":
-                # TODO: handle decrement prefix
-                raise NotImplementedError("Decrement prefix not implemented")
+                definition = mydict_var[ast.value]
+                if definition is None:
+                    raise ValueError(f"Undefined variable: {ast.value}")
+                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
+                print(value)
+                inc_value = value[1].constant -1
+                value = (int, ir.Constant(ir.IntType(32), inc_value))
+                builder.store(value[1], var)
+                mydict_var[ast.value[0]] = {"type": type, "value" : value, "var" : var}
+                return value
             case "logical_op_expression":
                 return compile_ast(ast.children[0])
             case "and":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
+                print(lparm)
+                print(rparm)
+                # if lparm[1].__class__ is not ir.Constant: 
+                    # definition = mydict_var[name]
+                    # if definition is None:
+                    #     raise ValueError(f"Undefined variable: {ast.value[0]}")
+                    # l_value = definition.get("value")
                 # TODO: support var
                 if ((lparm[0] is int and lparm[1].constant != 0) and ((rparm[0] is int and rparm[1].constant != 0))):
                     return (int, ir.Constant(ir.IntType(32), 1))
@@ -244,9 +283,9 @@ def compile(name, code):
                 # TODO: handle logical op not
                 raise NotImplementedError("Logical op not not implemented")
             case "logical_op_factor":
-                if ast.value == "TRUE":
+                if ast.value.lower() == "true":
                     return (int, ir.Constant(ir.IntType(32), 1))
-                elif ast.value == "FALSE":
+                elif ast.value.lower() == "false":
                     return (int, ir.Constant(ir.IntType(32), 0))
                 else:
                     raise ValueError("Unknown logical factor")
@@ -366,97 +405,6 @@ def compile(name, code):
                 return compile_ast(ast.children[0])
             case ";":
                 return
-            # return compile_ast(ast.children[0])
-            # case "function_def":
-            #     if ast.value[0] == 'int':
-            #         func = ir.Function(module, ir.FunctionType(ir.IntType(32), func_args), name=ast.value[1])
-            #     elif ast.value[0] == 'float':
-            #         func = ir.Function(module, ir.FunctionType(ir.FloatType(), func_args), name=ast.value[1])
-            #     else:
-            #         raise ValueError(f"Unknown function type: {ast.value[0]}")
-            #     block = func.append_basic_block()
-            #     builder = ir.IRBuilder(block)
-            #     if len(ast.children) > 1:
-            #         compile_ast(ast.children[0])
-            #         builder.ret(compile_ast(ast.children[1]))
-            #     else:
-            #         builder.ret(compile_ast(ast.children[0]))
-            # case "scope":
-            #     return compile_ast(ast.children[0])
-            # case "assign":
-            #     var = builder.alloca(ir.IntType(32), name=ast.value)
-            #     builder.store(compile_ast(ast.children[0]), var)
-            #     return builder.load(var)
-            # case "statements":
-            #     if ast.value == ';':
-            #         compile_ast(ast.children[0])
-            #         return compile_ast(ast.children[1])
-            #     else:
-            #         return compile_ast(ast.children[0])
-            # case "statement":
-            #     return compile_ast(ast.children[0])
-            # case "expression":
-            #     return compile_ast(ast.children[0])
-            # case "params":
-            #     print(ast.value)
-            #     if ast.value == ',':
-            #         compile_ast(ast.children[0]) # not sure if that is the way
-            #         return compile_ast(ast.children[1])
-            #     else: 
-            #         return compile_ast(ast.children[0])
-            # case "int":
-            #     if len(ast.children) == 0:
-            #         func.args = func.args + (ir.IntType(32),)
-            #     else:
-            #         return compile_ast(ast.children[0])
-            # case "int_factor":
-            #     if len(ast.children) == 0:
-            #         if isinstance(ast.value, int):
-            #             return ir.Constant(ir.IntType(32), int(ast.value))
-            #         else:
-            #             var = builder.alloca(ir.IntType(32), name=ast.value)
-            #             return builder.load(var)
-            #     else:
-            #         return compile_ast(ast.children[0])
-            # case "int_term":
-            #     if ast.value == '':
-            #         return compile_ast(ast.children[0])
-            #     if ast.value == '*':
-            #         return builder.mul(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            #     if ast.value == '/':
-            #         return builder.sdiv(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            # case "int_expression":
-            #     if ast.value == '':
-            #         return compile_ast(ast.children[0])
-            #     if ast.value == '+':
-            #         return builder.add(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            #     if ast.value == '-':
-            #         return builder.sub(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            # case "float":
-            #     if len(ast.children) == 0:
-            #         func.args = func.args + (ir.FloatType(),)
-            #     else:
-            #         return compile_ast(ast.children[0])
-            # case "float_factor":
-            #     if len(ast.children) == 0:
-            #         # cannot be a variable for now, so no need to handle it
-            #         return ir.Constant(ir.FloatType(), float(ast.value))
-            #     else:
-            #         return compile_ast(ast.children[0])
-            # case "float_term":
-            #     if ast.value == '':
-            #         return compile_ast(ast.children[0])
-            #     if ast.value == '*':
-            #         return builder.fmul(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            #     if ast.value == '/':
-            #         return builder.fdiv(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            # case "float_expression":
-            #     if ast.value == '':
-            #         return compile_ast(ast.children[0])
-            #     if ast.value == '+':
-            #         return builder.fadd(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
-            #     if ast.value == '-':
-            #         return builder.fsub(compile_ast(ast.children[0]), compile_ast(ast.children[1]))
             case _:
                 raise ValueError(f"Unknown AST node type: {ast.type}")
 
@@ -467,6 +415,7 @@ def compile(name, code):
     with open(f"{name}.ll", "w") as f:
         f.write(str(module))
 
+    return str(module)
 
 def main():
     while True:
