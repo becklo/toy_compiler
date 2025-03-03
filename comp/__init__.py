@@ -257,15 +257,23 @@ def compile(name, code):
             case "and":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                print(lparm)
-                print(rparm)
-                # if lparm[1].__class__ is not ir.Constant: 
-                    # definition = mydict_var[name]
-                    # if definition is None:
-                    #     raise ValueError(f"Undefined variable: {ast.value[0]}")
-                    # l_value = definition.get("value")
-                # TODO: support var
-                if ((lparm[0] is int and lparm[1].constant != 0) and ((rparm[0] is int and rparm[1].constant != 0))):
+
+                if lparm[1].__class__ is not ir.Constant: 
+                    definition = mydict_var[lparm[-1]]
+                    if definition is None:
+                        raise ValueError(f"Undefined variable: {lparam[-1]}")
+                    l_value = definition.get("value")
+                else: 
+                    l_value = lparm[1].constant
+
+                if rparm[1].__class__ is not ir.Constant: 
+                    definition = mydict_var[rparm[-1]]
+                    if definition is None:
+                        raise ValueError(f"Undefined variable: {rparm[-1]}")
+                    r_value = definition.get("value")
+                else: 
+                    r_value = rparm[1].constant
+                if ((lparm[0] is int and l_value != 0) and ((rparm[0] is int and r_value != 0))):
                     return (int, ir.Constant(ir.IntType(32), 1))
                 else:
                     return (int, ir.Constant(ir.IntType(32), 0))
@@ -382,7 +390,7 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
                 value, return_type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                return (return_type, builder.load(var))
+                return (return_type, builder.load(var), ast.value[0])
             case "func_call":             
                 definition = mydict_func[ast.value]
                 if definition is None:
