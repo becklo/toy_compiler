@@ -6,10 +6,10 @@ from node import Node
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
 
-def p_test(p):
-    '''program : statements
-    '''
-    p[0] = Node('program', '', [p[1]])
+# def p_test(p):
+#     '''program : statements
+#     '''
+#     p[0] = Node('program', '', [p[1]])
 
 # Define the grammar rules
 
@@ -169,8 +169,8 @@ def p_assignment(p):
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
                     | TYPE GLOBAL_VAR
-                    | TYPE IDENTIFIER ASSIGN expression 
-                    | TYPE GLOBAL_VAR ASSIGN expression 
+                    | TYPE IDENTIFIER ASSIGN logical_op_expression 
+                    | TYPE GLOBAL_VAR ASSIGN logical_op_expression 
     '''
     if (len(p) == 3):
         p[0] = Node('declaration', [p[1], p[2]], [])
@@ -187,9 +187,9 @@ def p_while_block(p):
     p[0] = Node('while_block', '', [p[1]])
 
 def p_for_loop(p):
-    '''for_loop : FOR LPAREN expression SEMICOLON logical_op_expression SEMICOLON expression RPAREN for_block 
+    '''for_loop : FOR LPAREN declaration SEMICOLON logical_op_expression SEMICOLON expression RPAREN for_block 
                     | FOR LPAREN RPAREN for_block 
-                    | FOR LPAREN expression RPAREN for_block
+                    | FOR LPAREN logical_op_expression RPAREN for_block
                     | FOR LPAREN expression SEMICOLON logical_op_expression RPAREN
                     | FOR LPAREN SEMICOLON SEMICOLON RPAREN for_block
 
@@ -198,7 +198,7 @@ def p_for_loop(p):
         case 10:
             p[0] = Node('for_loop_init_cond_iter', '', [p[3], p[5], p[7], p[9]])
         case 5:
-            p[0] = Node('for_loop', '', [p[4]])
+            p[0] = Node('for_loop', 'true', [p[4]])
         case 6: 
             p[0] = Node('for_loop_iter', '', [p[3], p[5]])
         case 7:

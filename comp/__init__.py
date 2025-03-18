@@ -161,15 +161,34 @@ def compile(name, code):
                 out_phi.add_incoming(for_block[1][1], for_block[0])
                 return (for_block[1][0], builder.ret(out_phi))
             case "for_loop_init_cond_iter":
+                # LOOP START
+                # [optional] init
+                # cond 
+                # loop_entry
+                # for_block
+                # [optional] iter
+                # cond : if true go to loop_entry, else go to loop_exit
+                # loop_exit
+                # LOOP END
+
+                # [optional] init
                 init = compile_ast(ast.children[0])
+                # cond
                 cond = compile_ast(ast.children[1])
-                with builder.if_then(cond[1]):
-                    for_block = compile_ast(ast.children[3])
-                    iter = compile_ast(ast.children[2])
-                # builder.cbranch(cond[1], for_block[0], for_block[1])
+
+                with builder.if_else(cond[1]) as (loop_entry, loop_otherwise):
+                    with loop_entry:
+                        with builder.if_then(cond[1]) as loop_block:
+                            for_block = compile_ast(ast.children[3])
+                        iter = compile_ast(ast.children[2])                
+                        cond = compile_ast(ast.children[1])
+                    with loop_otherwise:
+                        loop_exit = builder.append_basic_block('loop_exit')
+                        out_then = ir.Constant(ir.IntType(32), 1)
                 out_phi = builder.phi(ir.IntType(32))
                 out_phi.add_incoming(for_block[1][1], for_block[0])
-                return (for_block[1][0], builder.ret(out_phi))                
+                out_phi.add_incoming(out_then, loop_exit)
+                return (for_block[1][0], builder.ret(out_phi))
             case "for_loop_iter":
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
@@ -177,7 +196,7 @@ def compile(name, code):
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
             case "for_block":
-                bb = builder.basic_block
+                bb = builder.function.append_basic_block('loop_block')
                 out_then = compile_ast(ast.children[0])
                 return bb, out_then
             case "if_statement":
@@ -213,7 +232,6 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
                 value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                print(value)
                 inc_value = value[1].constant +1
                 new_value = (int, ir.Constant(ir.IntType(32), inc_value))
                 builder.store(new_value[1], var)
@@ -224,7 +242,6 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
                 value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                print(value)
                 inc_value = value[1].constant -1
                 new_value = (int, ir.Constant(ir.IntType(32), inc_value))
                 builder.store(new_value[1], var)
@@ -235,7 +252,6 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
                 value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                print(value)
                 inc_value = value[1].constant +1
                 value = (int, ir.Constant(ir.IntType(32), inc_value))
                 builder.store(value[1], var)
@@ -246,7 +262,6 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
                 value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                print(value)
                 inc_value = value[1].constant -1
                 value = (int, ir.Constant(ir.IntType(32), inc_value))
                 builder.store(value[1], var)
@@ -298,7 +313,6 @@ def compile(name, code):
                     r_value = definition.get("value")
                 else: 
                     r_value = rparm[1].constant
-                # TODO: support var
                 if ((lparm[0] is int and l_value != 0) or ((rparm[0] is int and r_value != 0))):
                     return (int, ir.Constant(ir.IntType(32), 1))
                 else:
