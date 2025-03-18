@@ -173,22 +173,43 @@ def compile(name, code):
 
                 # [optional] init
                 init = compile_ast(ast.children[0])
+                
+                loophead = builder.function.append_basic_block('loop.header')
+                loopbody = builder.function.append_basic_block('loop.body')
+                loopend = builder.function.append_basic_block('loop.end')
+
+                builder.branch(loophead)
+                builder.position_at_end(loophead)
                 # cond
                 cond = compile_ast(ast.children[1])
+                builder.cbranch(cond[1], loopbody, loopend)
 
-                with builder.if_else(cond[1]) as (loop_entry, loop_otherwise):
-                    with loop_entry:
-                        with builder.if_then(cond[1]) as loop_block:
-                            for_block = compile_ast(ast.children[3])
-                        iter = compile_ast(ast.children[2])                
-                        cond = compile_ast(ast.children[1])
-                    with loop_otherwise:
-                        loop_exit = builder.append_basic_block('loop_exit')
-                        out_then = ir.Constant(ir.IntType(32), 1)
-                out_phi = builder.phi(ir.IntType(32))
-                out_phi.add_incoming(for_block[1][1], for_block[0])
-                out_phi.add_incoming(out_then, loop_exit)
-                return (for_block[1][0], builder.ret(out_phi))
+                builder.position_at_end(loopbody)
+                # for_block
+                for_block = compile_ast(ast.children[3])
+
+                # [optional] iter
+                iter = compile_ast(ast.children[2])
+                builder.branch(loophead)
+
+                builder.position_at_end(loopend)
+                print(for_block)
+                #TODO: what should it return?
+                return (for_block[0], builder.ret(for_block[1]))
+
+                # with builder.if_else(cond[1]) as (loop_entry, loop_otherwise):
+                #     with loop_entry:
+                #         with builder.if_then(cond[1]) as loop_block:
+                #             for_block = compile_ast(ast.children[3])
+                #         iter = compile_ast(ast.children[2])                
+                #         cond = compile_ast(ast.children[1])
+                #     with loop_otherwise:
+                #         loop_exit = builder.append_basic_block('loop_exit')
+                #         out_then = ir.Constant(ir.IntType(32), 1)
+                # out_phi = builder.phi(ir.IntType(32))
+                # out_phi.add_incoming(for_block[1][1], for_block[0])
+                # out_phi.add_incoming(out_then, loop_exit)
+                # return (for_block[1][0], builder.ret(out_phi))
             case "for_loop_iter":
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
@@ -196,9 +217,10 @@ def compile(name, code):
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
             case "for_block":
-                bb = builder.function.append_basic_block('loop_block')
-                out_then = compile_ast(ast.children[0])
-                return bb, out_then
+                # bb = builder.function.append_basic_block('loop_block')
+                # out_then = compile_ast(ast.children[0])
+                # return bb, out_then
+                return compile_ast(ast.children[0])
             case "if_statement":
                 pred = compile_ast(ast.children[0])
                 with builder.if_then(pred[1]):
