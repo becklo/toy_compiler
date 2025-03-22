@@ -38,7 +38,7 @@ def compile(name, code):
         func_args = ()
         match ast.type:
             case "program":
-                return compile_ast(ast.children[0])
+                return [compile_ast(x) for x in ast.children][-1] if len(ast.children)>0 else (0,0)
             case "include":
                 # TODO: handle include
                 raise NotImplementedError("Include not implemented")
@@ -77,27 +77,25 @@ def compile(name, code):
             case "func_dec_params":
                 if ast.value == '':
                     return ()
-                else: 
-                    return compile_ast(ast.children[0])
+                return compile_ast(ast.children[0])
             case "extended_parameters":
                 # TODO: handle extended parameters
                 raise NotImplementedError("Extended parameters not implemented")
             case "dec_parameters":
                 if len(ast.children) == 1:
                     return compile_ast(ast.children[0])
-                else:
-                    return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
+                return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
             case "dec_parameter":
                 return (ast.value[0], ast.value[1])
             case "statements":
                 if len(ast.children) == 1 or (len(ast.children) == 2 and ast.children[1].type == ";"):
                     return compile_ast(ast.children[0])
-                else:
-                    return compile_ast(ast.children[0]) + compile_ast(ast.children[1])
+                compile_ast(ast.children[0])
+                return compile_ast(ast.children[1])
             case "statement":
                 return compile_ast(ast.children[0])
             case "scope":
-                if len(ast.children) == 1:
+                if len(ast.children) == 1: # TODO: handle empty scope
                     mydict_func.__push__()
                     mydict_var.__push__()
                     v = compile_ast(ast.children[0])
@@ -129,6 +127,11 @@ def compile(name, code):
                         type, return_type = ir.IntType(32), int
                     case "float":
                         type, return_type = ir.FloatType(), float
+                    case "str":
+                        #TODO: handle string type
+                        type, return_type = ir.IntType(8).as_pointer(), str
+                    case _:
+                        raise ValueError(f"Unknown type: {ast.value[0]}")
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
                 else: 
@@ -194,22 +197,7 @@ def compile(name, code):
 
                 builder.position_at_end(loopend)
                 print(for_block)
-                #TODO: what should it return?
                 return (for_block[0], builder.ret(for_block[1]))
-
-                # with builder.if_else(cond[1]) as (loop_entry, loop_otherwise):
-                #     with loop_entry:
-                #         with builder.if_then(cond[1]) as loop_block:
-                #             for_block = compile_ast(ast.children[3])
-                #         iter = compile_ast(ast.children[2])                
-                #         cond = compile_ast(ast.children[1])
-                #     with loop_otherwise:
-                #         loop_exit = builder.append_basic_block('loop_exit')
-                #         out_then = ir.Constant(ir.IntType(32), 1)
-                # out_phi = builder.phi(ir.IntType(32))
-                # out_phi.add_incoming(for_block[1][1], for_block[0])
-                # out_phi.add_incoming(out_then, loop_exit)
-                # return (for_block[1][0], builder.ret(out_phi))
             case "for_loop_iter":
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
@@ -217,9 +205,6 @@ def compile(name, code):
                 # TODO: handle for loop
                 raise NotImplementedError("For loop not implemented")
             case "for_block":
-                # bb = builder.function.append_basic_block('loop_block')
-                # out_then = compile_ast(ast.children[0])
-                # return bb, out_then
                 return compile_ast(ast.children[0])
             case "if_statement":
                 pred = compile_ast(ast.children[0])
@@ -247,48 +232,42 @@ def compile(name, code):
                 # TODO: handle return statement
                 raise NotImplementedError("Return statement not implemented")
             case "string":
-                # TODO: handle string
-                raise NotImplementedError("String not implemented")
+                # TODO: check if definition is ok
+                return (str, ir.Constant(ir.ArrayType(ir.IntType(8), len(ast.value)), ast.value) )
             case "increment_postfix_expression":
                 definition = mydict_var[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
-                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                inc_value = value[1].constant +1
-                new_value = (int, ir.Constant(ir.IntType(32), inc_value))
-                builder.store(new_value[1], var)
-                mydict_var[ast.value[0]] = {"type": type, "value" : new_value, "var" : var}
-                return value
+                type, var = definition.get("type"), definition.get("var")
+                r = builder.load(var)
+                n = builder.add(r,ir.Constant(ir.IntType(32),1))
+                builder.store(n, var)
+                return (type, r)
             case "decrement_postfix_expression":
                 definition = mydict_var[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
-                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                inc_value = value[1].constant -1
-                new_value = (int, ir.Constant(ir.IntType(32), inc_value))
-                builder.store(new_value[1], var)
-                mydict_var[ast.value[0]] = {"type": type, "value" : new_value, "var" : var}
-                return value
+                type, var =  definition.get("type"), definition.get("var")
+                r = builder.load(var)
+                n = builder.sub(r,ir.Constant(ir.IntType(32),1))
+                builder.store(n, var)
+                return (type, r)
             case "increment_prefix_expression":
                 definition = mydict_var[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
-                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                inc_value = value[1].constant +1
-                value = (int, ir.Constant(ir.IntType(32), inc_value))
-                builder.store(value[1], var)
-                mydict_var[ast.value[0]] = {"type": type, "value" : value, "var" : var}
-                return value
+                type, var = definition.get("type"), definition.get("var")
+                n = builder.add(ir.Constant(ir.IntType(32),1),builder.load(var))
+                builder.store(n, var)
+                return (type, builder.load(var))
             case "decrement_prefix_expression":
                 definition = mydict_var[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value}")
-                value, type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                inc_value = value[1].constant -1
-                value = (int, ir.Constant(ir.IntType(32), inc_value))
-                builder.store(value[1], var)
-                mydict_var[ast.value[0]] = {"type": type, "value" : value, "var" : var}
-                return value
+                type, var = definition.get("type"), definition.get("var")
+                n = builder.sub(ir.Constant(ir.IntType(32),1),builder.load(var))
+                builder.store(n, var)
+                return (type, builder.load(var))
             case "logical_op_expression":
                 return compile_ast(ast.children[0])
             case "and":
