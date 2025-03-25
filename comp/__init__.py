@@ -95,13 +95,16 @@ def compile(name, code):
             case "statement":
                 return compile_ast(ast.children[0])
             case "scope":
-                if len(ast.children) == 1: # TODO: handle empty scope
+                if len(ast.children) == 1: 
                     mydict_func.__push__()
                     mydict_var.__push__()
                     v = compile_ast(ast.children[0])
                     mydict_func.__pop__()
                     mydict_var.__pop__()
                     return v
+                # TODO: handle empty scope
+                # I want to return void
+                return (None, ir.VoidType)
             case "iteration_statement":
                 return compile_ast(ast.children[0])
             case "selection_statement":
@@ -134,6 +137,20 @@ def compile(name, code):
                         raise ValueError(f"Unknown type: {ast.value[0]}")
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
+                    # implicity cast to declared type
+                    if value[0] != return_type:
+                        print(value[0], return_type)
+                        print(type)
+                        match type:
+                            case ir.IntType():
+                                value = (return_type, ir.Constant(ir.IntType(32), int(value[1].constant)))
+                            case ir.FloatType():
+                                value = (return_type, ir.Constant(ir.FloatType(), float(value[1].constant)))
+                            # case ir.IntType(8).as_pointer():
+                            #     #TODO: handle string type
+                            #     raise NotImplementedError("String type not implemented")
+                            case _:
+                                raise ValueError(f"Unknown type: {value[0]}")
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
@@ -342,83 +359,183 @@ def compile(name, code):
             case "==":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('==', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('==', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case "!=":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('!=', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('!=', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int ):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('!=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('!=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case ">":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('>', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('>', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int ):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('>', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('>', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case "<":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('<', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('<', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('<', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('<', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case ">=":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('>=', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('>=', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('>=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('>=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case "<=":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.icmp_signed('<=', lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fcmp_unordered('<=', lparm[1], rparm[1]))
-                raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.icmp_signed('<=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fcmp_unordered('<=', lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot compare {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for comparison: {lparm[0]} and {rparm[1]}")
             case "+":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.add(lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fadd(lparm[1], rparm[1]))
-                raise ValueError(f"Cannot add {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.add(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot add {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fadd(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot add {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for addition: {lparm[0]} and {rparm[1]}")
             case "-":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.sub(lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fsub(lparm[1], rparm[1]))
-                raise ValueError(f"Cannot sub {lparm} and {rparm}")          
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.sub(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot sub {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fsub(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot sub {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for subtraction: {lparm[0]} and {rparm[1]}")       
             case "*":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.mul(lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fmul(lparm[1], rparm[1]))
-                raise ValueError(f"Cannot mul {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.mul(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot mul {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fmul(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot mul {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for multiplication: {lparm[0]} and {rparm[1]}")
             case "/":
                 lparm = compile_ast(ast.children[0])
                 rparm = compile_ast(ast.children[1])
-                if (lparm[0] is int and rparm[0] is int):
-                    return (int, builder.sdiv(lparm[1], rparm[1]))
-                if (lparm[0] is float and rparm[0] is float):
-                    return (float, builder.fdiv(lparm[1], rparm[1]))
-                raise ValueError(f"Cannot div {lparm} and {rparm}")
+                if (lparm[0] is int):
+                    # implicit conversion to int
+                    if (rparm[0] is float):
+                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if (rparm[0] is int):
+                        return (int, builder.sdiv(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot div {lparm} and {rparm}")
+                if (lparm[0] is float):
+                    # implicit conversion to float
+                    if (rparm[0] is int):
+                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                    if (rparm[0] is float):
+                        return (float, builder.fdiv(lparm[1], rparm[1]))
+                    raise ValueError(f"Cannot div {lparm} and {rparm}")
+                raise ValueError(f"Unsupported type for division: {lparm[0]} and {rparm[1]}")
             case "term":
                 return compile_ast(ast.children[0])
             case "int":
