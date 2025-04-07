@@ -43,10 +43,14 @@ def compile(name, code):
                 # TODO: handle include
                 raise NotImplementedError("Include not implemented")
             case "global_var":
-                lparm = compile_ast(ast.children[0])
-                var = ir.GlobalVariable(module, lparm[0], name=ast.value)
-                var.initializer = ir.Constant(lparm[0], 0)
-                return builder.load(var)
+                # TODO: handle global variable
+                # which builder and function to use?
+                # lparm = compile_ast(ast.children[0])
+                # var = ir.GlobalVariable(module, lparm[0], name=ast.value)
+                var = ir.GlobalVariable(module, ir.IntType(32), name=ast.children[0].value[1])
+                var.initializer = ir.Constant(ir.IntType(32), 0)
+                return var
+                # return builder.load(var)
             case "external_function_declaration":
                 # TODO: handle external function declaration
                 raise NotImplementedError("External function declaration not implemented")
@@ -104,7 +108,7 @@ def compile(name, code):
                     return v
                 # TODO: handle empty scope
                 # I want to return void
-                return (None, ir.VoidType)
+                return (None, ir.Constant(ir.IntType(32),0))
             case "iteration_statement":
                 return compile_ast(ast.children[0])
             case "selection_statement":
@@ -132,7 +136,7 @@ def compile(name, code):
                         type, return_type = ir.FloatType(), float
                     case "str":
                         #TODO: handle string type
-                        type, return_type = ir.IntType(8).as_pointer(), str
+                        type, return_type = ir.PointerType(ir.IntType(8)), str
                     case _:
                         raise ValueError(f"Unknown type: {ast.value[0]}")
                 if len(ast.children) > 0:
@@ -362,14 +366,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('==', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -380,14 +384,14 @@ def compile(name, code):
                 if (lparm[0] is int ):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('!=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('!=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -398,14 +402,14 @@ def compile(name, code):
                 if (lparm[0] is int ):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('>', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('>', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -416,14 +420,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('<', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('<', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -434,14 +438,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('>=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('>=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -452,14 +456,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('<=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('<=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -470,14 +474,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.add(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot add {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fadd(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot add {lparm} and {rparm}")
@@ -488,7 +492,7 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.sub(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot sub {lparm} and {rparm}")
@@ -506,14 +510,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.mul(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot mul {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fmul(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot mul {lparm} and {rparm}")
@@ -523,15 +527,15 @@ def compile(name, code):
                 rparm = compile_ast(ast.children[1])
                 if (lparm[0] is int):
                     # implicit conversion to int
-                    if (rparm[0] is float):
-                        rparm = (int, ir.Constant(ir.IntType(32), int(rparm[1].constant)))
+                    if rparm[0] is float:
+                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.sdiv(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot div {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, ir.Constant(ir.FloatType(), float(rparm[1].constant)))
+                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fdiv(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot div {lparm} and {rparm}")
