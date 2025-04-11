@@ -65,8 +65,15 @@ def compile(name, code):
                 mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
                 return (return_type, var)
             case "external_function_declaration":
-                # TODO: handle external function declaration
-                raise NotImplementedError("External function declaration not implemented")
+                func_args = compile_ast(ast.children[0])
+                func_args_type = ()
+                if func_args != ():
+                    for i in range(0, len(func_args), 2):
+                        func_args_type = func_args_type + (helper_get_type(func_args[i]),)
+                func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
+                func_def = ir.Function(module, func_t, name=ast.value[1])
+                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
+                return (ast.value[0],func_def)
             case "function_declaration":
                 func_args = compile_ast(ast.children[0])
                 func_args_type = ()
