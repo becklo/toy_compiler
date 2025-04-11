@@ -43,14 +43,27 @@ def compile(name, code):
                 # TODO: handle include
                 raise NotImplementedError("Include not implemented")
             case "global_var":
-                # TODO: handle global variable
-                # which builder and function to use?
-                # lparm = compile_ast(ast.children[0])
-                # var = ir.GlobalVariable(module, lparm[0], name=ast.value)
-                var = ir.GlobalVariable(module, ir.IntType(32), name=ast.children[0].value[1])
-                var.initializer = ir.Constant(ir.IntType(32), 0)
-                return var
-                # return builder.load(var)
+                match ast.value[0]:
+                    case "int":
+                        type, return_type = ir.IntType(32), int
+                    case "float":
+                        type, return_type = ir.FloatType(), float
+                    case "str":
+                        #TODO: handle string type
+                        type, return_type = ir.PointerType(ir.IntType(8)), str
+                    case _:
+                        raise ValueError(f"Unknown type: {ast.value[0]}")
+                if len(ast.children) > 0:
+                    value = compile_ast(ast.children[0])
+                else: 
+                   # not set, put 0 as default value
+                   value = (return_type, ir.Constant(type, 0))
+                if mydict_var.in_scope(ast.value[1]):
+                    raise ValueError(f"Variable {ast.value[1]} already defined in this scope")
+                var = ir.GlobalVariable(module, type, name=ast.value[1])
+                var.initializer = value[1]
+                mydict_var[ast.value[1]] = {"type": return_type, "value" : value, "var" : var}
+                return (return_type, var)
             case "external_function_declaration":
                 # TODO: handle external function declaration
                 raise NotImplementedError("External function declaration not implemented")
@@ -147,9 +160,9 @@ def compile(name, code):
                         print(type)
                         match type:
                             case ir.IntType():
-                                value = (return_type, ir.Constant(ir.IntType(32), int(value[1].constant)))
+                                value = (return_type, builder.fptoui(rparm[1], ir.IntType(32)))
                             case ir.FloatType():
-                                value = (return_type, ir.Constant(ir.FloatType(), float(value[1].constant)))
+                                value = (return_type, builder.uitofp(value[1], ir.FloatType()))
                             # case ir.IntType(8).as_pointer():
                             #     #TODO: handle string type
                             #     raise NotImplementedError("String type not implemented")
@@ -551,6 +564,7 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
                 value, return_type, var = definition.get("value"), definition.get("type"), definition.get("var")
+                # TODO: Can global variable be loaded ?
                 return (return_type, builder.load(var), ast.value[0])
             case "func_call":             
                 definition = mydict_func[ast.value]

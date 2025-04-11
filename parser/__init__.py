@@ -43,8 +43,13 @@ def p_include(p):
     p[0] = Node(p[1], p[2], [])
 
 def p_global_var(p):
-    '''global_var : declaration'''
-    p[0] = Node('global_var', '', [p[1]])
+    '''global_var : TYPE IDENTIFIER
+                    | TYPE IDENTIFIER ASSIGN logical_op_expression 
+    '''
+    if (len(p) == 3):
+        p[0] = Node('global_var', [p[1], p[2]], [])
+    else:
+        p[0] = Node('global_var', [p[1], p[2]], [p[4]])
 
 
 def p_external_function_declaration(p):
@@ -162,15 +167,12 @@ def p_expression(p):
 
 def p_assignment(p):
     '''assignment : IDENTIFIER ASSIGN logical_op_expression 
-                    | GLOBAL_VAR ASSIGN logical_op_expression 
     '''
     p[0] = Node(p[2], p[1],  [p[3]])
 
 def p_declaration(p):
     '''declaration : TYPE IDENTIFIER 
-                    | TYPE GLOBAL_VAR
                     | TYPE IDENTIFIER ASSIGN logical_op_expression 
-                    | TYPE GLOBAL_VAR ASSIGN logical_op_expression 
     '''
     if (len(p) == 3):
         p[0] = Node('declaration', [p[1], p[2]], [])
@@ -334,10 +336,6 @@ def p_factor_float(p):
 # def p_factor_inverse_float(p):
 #     '''factor : MINUS FLOAT'''
 #     p[0] = Node('float', -p[2], [])
-
-def p_global_variable(p):
-    '''factor : GLOBAL_VAR'''
-    p[0] = Node('global_var', p[1], [])
 
 def p_variable(p):
     '''factor : IDENTIFIER'''

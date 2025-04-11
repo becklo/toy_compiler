@@ -123,9 +123,9 @@ def t_DECREMENT_POSTFIX(t):
     t.value = t.value[:-2]
     return t
 
-def t_GLOBAL_VAR(t):
-    r'Global\_[a-zA-Z_][a-zA-Z0-9_]*'
-    return t
+# def t_GLOBAL_VAR(t):
+#     r'Global\_[a-zA-Z_][a-zA-Z0-9_]*'
+#     return t
 
 # def t_EXTERNAL_FUNC(t):
 #     r'external\_[a-zA-Z_][a-zA-Z0-9_]*'
