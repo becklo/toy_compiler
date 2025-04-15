@@ -49,15 +49,17 @@ def compile(name, code):
                     case "float":
                         type, return_type = ir.FloatType(), float
                     case "str":
-                        #TODO: handle string type
                         type, return_type = ir.PointerType(ir.IntType(8)), str
                     case _:
                         raise ValueError(f"Unknown type: {ast.value[0]}")
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
+                    if ast.value[0] == "str":
+                        type = ir.ArrayType(ir.IntType(8), value[-1])
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
+                print(mydict_var)
                 if mydict_var.in_scope(ast.value[1]):
                     raise ValueError(f"Variable {ast.value[1]} already defined in this scope")
                 var = ir.GlobalVariable(module, type, name=ast.value[1])
@@ -73,7 +75,7 @@ def compile(name, code):
                 func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
                 func_def = ir.Function(module, func_t, name=ast.value[1])
                 mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
-                return (ast.value[0],func_def)
+                return (ast.value[0], func_def)
             case "function_declaration":
                 func_args = compile_ast(ast.children[0])
                 func_args_type = ()
@@ -126,8 +128,6 @@ def compile(name, code):
                     mydict_func.__pop__()
                     mydict_var.__pop__()
                     return v
-                # TODO: handle empty scope
-                # I want to return void
                 return (None, ir.Constant(ir.IntType(32),0))
             case "iteration_statement":
                 return compile_ast(ast.children[0])
@@ -155,26 +155,23 @@ def compile(name, code):
                     case "float":
                         type, return_type = ir.FloatType(), float
                     case "str":
-                        #TODO: handle string type
                         type, return_type = ir.PointerType(ir.IntType(8)), str
                     case _:
                         raise ValueError(f"Unknown type: {ast.value[0]}")
                 if len(ast.children) > 0:
                     value = compile_ast(ast.children[0])
+                    if value[0] == str:
+                        type = ir.ArrayType(ir.IntType(8), value[-1])
                     # implicity cast to declared type
                     if value[0] != return_type:
-                        print(value[0], return_type)
-                        print(type)
                         match type:
                             case ir.IntType():
-                                value = (return_type, builder.fptoui(rparm[1], ir.IntType(32)))
+                                value = (return_type, builder.fptosi(rparm[1], ir.IntType(32)))
                             case ir.FloatType():
-                                value = (return_type, builder.uitofp(value[1], ir.FloatType()))
-                            # case ir.IntType(8).as_pointer():
-                            #     #TODO: handle string type
-                            #     raise NotImplementedError("String type not implemented")
+                                value = (return_type, builder.sitofp(value[1], ir.FloatType()))
+                            # no implicit cast from str to int/float or back
                             case _:
-                                raise ValueError(f"Unknown type: {value[0]}")
+                                raise ValueError(f"Cannot implicit cast type: {value[0]} to: {return_type}")
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
@@ -282,8 +279,7 @@ def compile(name, code):
                 # TODO: handle return statement
                 raise NotImplementedError("Return statement not implemented")
             case "string":
-                # TODO: check if definition is ok
-                return (str, ir.Constant(ir.ArrayType(ir.IntType(8), len(ast.value)), ast.value) )
+                return (str, ir.Constant(ir.ArrayType(ir.IntType(8), len(ast.value)), bytearray(ast.value, encoding='utf8')), len(ast.value))
             case "increment_postfix_expression":
                 definition = mydict_var[ast.value]
                 if definition is None:
@@ -386,14 +382,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('==', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('==', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -404,14 +400,14 @@ def compile(name, code):
                 if (lparm[0] is int ):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('!=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('!=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -422,14 +418,14 @@ def compile(name, code):
                 if (lparm[0] is int ):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('>', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('>', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -440,14 +436,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('<', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('<', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -458,14 +454,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('>=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('>=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -476,14 +472,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.icmp_signed('<=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fcmp_unordered('<=', lparm[1], rparm[1]))
                     raise ValueError(f"Cannot compare {lparm} and {rparm}")
@@ -494,14 +490,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.add(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot add {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fadd(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot add {lparm} and {rparm}")
@@ -512,7 +508,7 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.sub(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot sub {lparm} and {rparm}")
@@ -530,14 +526,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if (rparm[0] is float):
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.mul(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot mul {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fmul(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot mul {lparm} and {rparm}")
@@ -548,14 +544,14 @@ def compile(name, code):
                 if (lparm[0] is int):
                     # implicit conversion to int
                     if rparm[0] is float:
-                        rparm = (int, builder.fptoui(rparm[1], ir.IntType(32)))
+                        rparm = (int, builder.fptosi(rparm[1], ir.IntType(32)))
                     if (rparm[0] is int):
                         return (int, builder.sdiv(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot div {lparm} and {rparm}")
                 if (lparm[0] is float):
                     # implicit conversion to float
                     if (rparm[0] is int):
-                        rparm = (float, builder.uitofp(rparm[1], ir.FloatType()))
+                        rparm = (float, builder.sitofp(rparm[1], ir.FloatType()))
                     if (rparm[0] is float):
                         return (float, builder.fdiv(lparm[1], rparm[1]))
                     raise ValueError(f"Cannot div {lparm} and {rparm}")
@@ -571,7 +567,6 @@ def compile(name, code):
                 if definition is None:
                     raise ValueError(f"Undefined variable: {ast.value[0]}")
                 value, return_type, var = definition.get("value"), definition.get("type"), definition.get("var")
-                # TODO: Can global variable be loaded ?
                 return (return_type, builder.load(var), ast.value[0])
             case "func_call":             
                 definition = mydict_func[ast.value]
@@ -602,6 +597,10 @@ def compile(name, code):
     compile_ast(ast)
     # Print the module IR
     print(module)
+    # clean scope definition to avoid conflicts
+    mydict_var.clear()
+    mydict_func.clear()
+    print(mydict_var)
     with open(f"{name}.ll", "w") as f:
         f.write(str(module))
 
