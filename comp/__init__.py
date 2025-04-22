@@ -59,7 +59,6 @@ def compile(name, code):
                 else: 
                    # not set, put 0 as default value
                    value = (return_type, ir.Constant(type, 0))
-                print(mydict_var)
                 if mydict_var.in_scope(ast.value[1]):
                     raise ValueError(f"Variable {ast.value[1]} already defined in this scope")
                 var = ir.GlobalVariable(module, type, name=ast.value[1])
@@ -74,20 +73,24 @@ def compile(name, code):
                         func_args_type = func_args_type + (helper_get_type(func_args[i]),)
                 func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
                 func_def = ir.Function(module, func_t, name=ast.value[1])
-                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
+                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def, "is_extended": False}
                 return (ast.value[0], func_def)
             case "function_declaration":
                 func_args = compile_ast(ast.children[0])
                 func_args_type = ()
-                if func_args != ():
-                    for i in range(0, len(func_args), 2):
-                        func_args_type = func_args_type + (helper_get_type(func_args[i]),)
-                func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
-                func_def = ir.Function(module, func_t, name=ast.value[1])
-                mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args, "func": func_def}
-                # pass function name to children i.e. fonction block
-                ast.children[1].value = ast.value[1]
-                return compile_ast(ast.children[1])
+                if not func_args[1]: # not extended
+                    if func_args[0] != ():
+                        for i in range(0, len(func_args[0]), 2):
+                            func_args_type = func_args_type + (helper_get_type(func_args[0][i]),)
+                    func_t = ir.FunctionType(helper_get_type(ast.value[0]), func_args_type) 
+                    func_def = ir.Function(module, func_t, name=ast.value[1])
+                    mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args[0], "func": func_def, "is_extended": func_args[1]}
+                    # pass function name to children i.e. fonction block
+                    ast.children[1].value = ast.value[1]
+                    return compile_ast(ast.children[1])
+                else: # extended function, will be defined during function call
+                    mydict_func[ast.value[1]] = {"type": ast.value[0], "arg" : func_args[0], "is_extended": func_args[1]}
+                    return 0
             case "function_block":
                 definition = mydict_func[ast.value]
                 if definition is None:
@@ -96,17 +99,22 @@ def compile(name, code):
                 block = func.append_basic_block()
                 builder = ir.IRBuilder(block)
                 return_value = compile_ast(ast.children[0])
-                #TODO: update to support no return value
+                #TODO: update to support return, i.e. return_statement
+                # example: 
+                # int f() {1}; int main(){f(); return 1}  OK
+                # int f() {1}; int main(){f(); 1} OK 
+                # int f() {1}; int main(){f(); return 1; 2} NOT OK
                 if return_value[-1].__class__ is not ir.Ret:
                     builder.ret(return_value[-1])
                 return return_value
             case "func_dec_params":
                 if ast.value == '':
-                    return ()
-                return compile_ast(ast.children[0])
+                    return ((), False)
+                return (compile_ast(ast.children[0]), False)
             case "extended_parameters":
-                # TODO: handle extended parameters
-                raise NotImplementedError("Extended parameters not implemented")
+                if len(ast.children) == 0:
+                    return ((), True)
+                return (compile_ast(ast.children[0]), True)
             case "dec_parameters":
                 if len(ast.children) == 1:
                     return compile_ast(ast.children[0])
@@ -196,7 +204,6 @@ def compile(name, code):
                 while_block = compile_ast(ast.children[-1])
                 builder.branch(loophead)
                 builder.position_at_end(loopend)
-                print(while_block)
                 return (while_block[0], builder.ret(while_block[1]))
             case "while_block":
                 return compile_ast(ast.children[0])
@@ -249,7 +256,6 @@ def compile(name, code):
 
                 builder.branch(loophead)
                 builder.position_at_end(loopend)
-                print(for_block)
                 return (for_block[0], builder.ret(for_block[1]))
             case "for_block":
                 return compile_ast(ast.children[0])
@@ -276,8 +282,9 @@ def compile(name, code):
                 out_then = compile_ast(ast.children[0])
                 return bb, out_then
             case "return_statement":
-                # TODO: handle return statement
-                raise NotImplementedError("Return statement not implemented")
+                return_value = compile_ast(ast.children[0])
+                ret = builder.ret(return_value[1])
+                return (return_value, ret)
             case "string":
                 return (str, ir.Constant(ir.ArrayType(ir.IntType(8), len(ast.value)), bytearray(ast.value, encoding='utf8')), len(ast.value))
             case "increment_postfix_expression":
@@ -572,7 +579,24 @@ def compile(name, code):
                 definition = mydict_func[ast.value]
                 if definition is None:
                     raise ValueError(f"Undefined function: {ast.value}")
-                func_def = definition.get("func")
+                if definition.get("is_extended"):
+                    # define function during call
+                    func_args_type = ()
+                    func_args_call = compile_ast(ast.children[0])
+                    func_args_def = definition.get("args")
+                    if func_args_call == ():
+                        raise ValueError(f"Function {ast.value} requires at least one argument")
+                    if func_args_type != ():
+                        for i in range(0, len(func_args_call), 2):
+                            # make sure the types match
+                            if (i < len(func_args_def) and func_args_call[i] != func_args_def[i]):
+                                raise ValueError(f"Type mismatch in argument {i+1} of function {ast.value}")
+                            func_args_type = func_args_type + (helper_get_type(func_args_def[i]),)
+                    func_type = definition.get("type")
+                    func_t = ir.FunctionType(helper_get_type(func_type), func_args_type) 
+                    func_def = ir.Function(module, func_t, name=ast.value)
+                else:
+                    func_def = definition.get("func")
                 func_type = definition.get("type")
                 func_args = ()
                 func_arg_list = []
@@ -600,7 +624,6 @@ def compile(name, code):
     # clean scope definition to avoid conflicts
     mydict_var.clear()
     mydict_func.clear()
-    print(mydict_var)
     with open(f"{name}.ll", "w") as f:
         f.write(str(module))
 
