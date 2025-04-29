@@ -5,7 +5,7 @@ from ctypes import CFUNCTYPE, c_int
 
 import llvmlite.binding as llvm
 
-from comp import compile
+from compiler import compile
 
 def create_execution_engine():
     """

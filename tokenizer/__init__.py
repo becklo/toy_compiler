@@ -1,5 +1,5 @@
 import ply.lex as lex
-import history
+import utils.history as history
 
 reserved = {
    'include' : 'INCLUDE',

@@ -15,7 +15,7 @@ graphviz = "^0.20.3"
 [tool.poetry.scripts]
 run = "compiler:main"
 test = "tests:main"
-compiler = "comp:main"
+compiler = "compiler:main"
 parser = "parser:main"
 token = "tokenizer:main"
 pthep = "parser.pthep:main"

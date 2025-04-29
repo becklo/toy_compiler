@@ -1,7 +1,7 @@
 import ply.yacc as yacc
-import history
+import utils.history as history
 
-from node import Node
+from utils.node import Node
 
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
