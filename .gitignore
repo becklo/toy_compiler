@@ -7,3 +7,4 @@ a.out
 *.o
 *.ll
 calc*
+.pycc_history
